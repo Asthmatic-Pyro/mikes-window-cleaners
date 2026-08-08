@@ -1,15 +1,15 @@
-import { Droplets, Eye, Home, Sparkles } from "lucide-react";
+import { Droplets, Eye, Sparkles, Store } from "lucide-react";
 
 const points = [
   {
     icon: Eye,
     title: "Tired of looking through haze?",
-    description: "Pollen, hard water, and fingerprints pile up fast — and make every room feel duller.",
+    description: "Pollen, hard water, and fingerprints pile up fast — and make every storefront feel duller.",
   },
   {
-    icon: Home,
-    title: "Want your place to feel fresher?",
-    description: "Clean windows lift the whole home. Light comes in cleaner. Curb appeal jumps overnight.",
+    icon: Store,
+    title: "Want your place to look sharper?",
+    description: "Clean glass lifts the whole storefront. Light comes in cleaner. First impressions jump overnight.",
   },
   {
     icon: Droplets,
@@ -18,12 +18,17 @@ const points = [
   },
   {
     icon: Sparkles,
-    title: "Need someone you can trust on ladders?",
-    description: "Mike treats every pane carefully — no shortcuts, no rushed corners, no surprises.",
+    title: "Need ground-level work done right?",
+    description: "No ladders — Mike works with reach poles from the Metro. Careful on every pane, no shortcuts.",
   },
 ];
 
-export default function WhySection() {
+type WhySectionProps = {
+  onLearnMore: () => void;
+  onGetQuote: () => void;
+};
+
+export default function WhySection({ onLearnMore, onGetQuote }: WhySectionProps) {
   return (
     <section id="why" className="section-pad">
       <div className="mx-auto max-w-6xl">
@@ -33,22 +38,39 @@ export default function WhySection() {
             <span className="text-wash">your windows</span>
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Most people put off window washing until everything looks cloudy. If any of this sounds familiar, we can help.
+            Most people put off window washing until everything looks cloudy. If that sounds like you, book a one-time
+            clean when Mike&apos;s in your area.
           </p>
         </div>
 
         <div className="grid gap-10 sm:grid-cols-2">
           {points.map((point) => (
-            <div key={point.title} className="group flex gap-4">
+            <button
+              key={point.title}
+              type="button"
+              onClick={onLearnMore}
+              className="group flex gap-4 rounded-lg text-left transition-transform duration-300 hover:-translate-y-0.5"
+            >
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-wash text-white transition-transform duration-300 group-hover:scale-105">
                 <point.icon className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="font-display text-xl font-semibold text-foreground">{point.title}</h3>
+                <h3 className="font-display text-xl font-semibold text-foreground group-hover:text-primary">
+                  {point.title}
+                </h3>
                 <p className="mt-2 text-muted-foreground leading-relaxed">{point.description}</p>
               </div>
-            </div>
+            </button>
           ))}
+        </div>
+
+        <div className="mt-12 flex flex-wrap gap-3">
+          <button type="button" onClick={onLearnMore} className="btn-secondary">
+            Learn more
+          </button>
+          <button type="button" onClick={onGetQuote} className="btn-primary">
+            Get a Free Quote
+          </button>
         </div>
       </div>
     </section>

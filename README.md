@@ -22,9 +22,28 @@ npm run preview
 
 ## Customize
 
-- Phone number placeholder in `src/components/QuoteSection.tsx`
 - Service area / copy in the section components under `src/components/`
-- Quote form currently confirms on-page; wire it to email or a form backend when ready
+
+## Quote form (Resend)
+
+Quote requests POST to `/api/quote` and are emailed via [Resend](https://resend.com).
+
+1. Create an API key at [resend.com/api-keys](https://resend.com/api-keys)
+2. Verify your sending domain at [resend.com/domains](https://resend.com/domains)
+3. Copy `.env.example` → `.env.local` (local) and set the same vars in [Vercel env settings](https://vercel.com/michael-dominic-galiotos-projects/mikes-window-cleaners/settings/environment-variables):
+
+| Variable | Purpose |
+|----------|---------|
+| `RESEND_API_KEY` | Resend API key |
+| `CONTACT_TO_EMAIL` | Inbox that receives quote requests |
+| `EMAIL_FROM` | Verified sender, e.g. `Mike's Window Cleaners <quotes@mikeswindowcleaners.com>` |
+
+Local API testing needs Vercel’s runtime (plain `npm run dev` only serves the Vite app):
+
+```sh
+npx vercel env pull .env.local
+npx vercel dev
+```
 
 ## Deploy (Vercel)
 

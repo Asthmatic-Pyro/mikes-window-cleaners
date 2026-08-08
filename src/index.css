@@ -4,41 +4,41 @@
 
 @layer base {
   :root {
-    /* Cool glass & sky — crisp water teal, not purple / cream / dark-neon */
-    --background: 198 45% 96%;
-    --foreground: 200 40% 12%;
+    /* NexGentics blue — hsl(210 85% 50%) / ~#1380ec */
+    --background: 210 45% 97%;
+    --foreground: 210 40% 12%;
 
-    --primary: 192 78% 32%;
+    --primary: 210 85% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 198 35% 90%;
-    --secondary-foreground: 200 40% 18%;
+    --secondary: 210 40% 92%;
+    --secondary-foreground: 210 40% 18%;
 
-    --muted: 198 25% 92%;
-    --muted-foreground: 200 18% 38%;
+    --muted: 210 30% 93%;
+    --muted-foreground: 210 18% 38%;
 
-    --accent: 174 55% 42%;
+    --accent: 210 85% 50%;
     --accent-foreground: 0 0% 100%;
 
-    --border: 198 22% 82%;
-    --input: 198 22% 88%;
-    --ring: 192 78% 32%;
+    --border: 210 25% 84%;
+    --input: 210 25% 88%;
+    --ring: 210 85% 50%;
 
     --gradient-hero: linear-gradient(
       160deg,
-      hsl(200 55% 88%) 0%,
-      hsl(192 45% 94%) 40%,
-      hsl(175 40% 90%) 100%
+      hsl(210 55% 90%) 0%,
+      hsl(210 45% 95%) 40%,
+      hsl(210 40% 92%) 100%
     );
     --gradient-wash: linear-gradient(
       135deg,
-      hsl(192 78% 32%) 0%,
-      hsl(174 55% 42%) 100%
+      hsl(210 85% 45%) 0%,
+      hsl(210 85% 58%) 100%
     );
     --gradient-glass: linear-gradient(
       120deg,
       hsl(0 0% 100% / 0.55) 0%,
-      hsl(198 50% 95% / 0.2) 50%,
+      hsl(210 50% 95% / 0.2) 50%,
       hsl(0 0% 100% / 0.45) 100%
     );
   }
@@ -54,8 +54,8 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     background-image:
-      radial-gradient(ellipse 80% 50% at 10% -10%, hsl(192 70% 75% / 0.35), transparent),
-      radial-gradient(ellipse 60% 40% at 90% 0%, hsl(174 50% 70% / 0.25), transparent),
+      radial-gradient(ellipse 80% 50% at 10% -10%, hsl(210 85% 70% / 0.35), transparent),
+      radial-gradient(ellipse 60% 40% at 90% 0%, hsl(210 75% 65% / 0.22), transparent),
       var(--gradient-hero);
     background-attachment: fixed;
     min-height: 100vh;
@@ -87,7 +87,7 @@
     @apply inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3
       font-semibold text-primary-foreground transition-all duration-300
       hover:brightness-110 hover:-translate-y-0.5 active:translate-y-0;
-    box-shadow: 0 12px 28px -8px hsl(192 78% 32% / 0.45);
+    box-shadow: 0 12px 28px -8px hsl(210 85% 50% / 0.45);
   }
 
   .btn-secondary {
