@@ -5,41 +5,41 @@
 @layer base {
   :root {
     /* NexGentics blue — hsl(210 85% 50%) / ~#1380ec */
-    --background: 210 45% 97%;
-    --foreground: 210 40% 12%;
+    --background: 210 42% 96%;
+    --foreground: 210 40% 10%;
 
-    --primary: 210 85% 50%;
+    --primary: 210 85% 48%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 92%;
-    --secondary-foreground: 210 40% 18%;
+    --secondary: 210 38% 92%;
+    --secondary-foreground: 210 40% 16%;
 
-    --muted: 210 30% 93%;
-    --muted-foreground: 210 18% 38%;
+    --muted: 210 28% 93%;
+    --muted-foreground: 210 16% 36%;
 
-    --accent: 210 85% 50%;
+    --accent: 210 85% 48%;
     --accent-foreground: 0 0% 100%;
 
-    --border: 210 25% 84%;
-    --input: 210 25% 88%;
-    --ring: 210 85% 50%;
+    --border: 210 22% 82%;
+    --input: 210 24% 88%;
+    --ring: 210 85% 48%;
 
     --gradient-hero: linear-gradient(
       160deg,
-      hsl(210 55% 90%) 0%,
-      hsl(210 45% 95%) 40%,
-      hsl(210 40% 92%) 100%
+      hsl(210 50% 91%) 0%,
+      hsl(210 42% 95%) 40%,
+      hsl(210 38% 92%) 100%
     );
     --gradient-wash: linear-gradient(
       135deg,
-      hsl(210 85% 45%) 0%,
-      hsl(210 85% 58%) 100%
+      hsl(210 85% 42%) 0%,
+      hsl(205 80% 55%) 100%
     );
     --gradient-glass: linear-gradient(
-      120deg,
-      hsl(0 0% 100% / 0.55) 0%,
-      hsl(210 50% 95% / 0.2) 50%,
-      hsl(0 0% 100% / 0.45) 100%
+      125deg,
+      hsl(0 0% 100% / 0.65) 0%,
+      hsl(210 50% 96% / 0.35) 50%,
+      hsl(0 0% 100% / 0.5) 100%
     );
   }
 
@@ -54,8 +54,9 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     background-image:
-      radial-gradient(ellipse 80% 50% at 10% -10%, hsl(210 85% 70% / 0.35), transparent),
-      radial-gradient(ellipse 60% 40% at 90% 0%, hsl(210 75% 65% / 0.22), transparent),
+      radial-gradient(ellipse 75% 48% at 8% -8%, hsl(210 85% 68% / 0.32), transparent),
+      radial-gradient(ellipse 55% 38% at 92% 2%, hsl(205 75% 62% / 0.2), transparent),
+      radial-gradient(ellipse 50% 30% at 50% 100%, hsl(210 60% 80% / 0.15), transparent),
       var(--gradient-hero);
     background-attachment: fixed;
     min-height: 100vh;
@@ -67,13 +68,17 @@
   .font-display {
     font-family: Syne, system-ui, sans-serif;
   }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
 }
 
 @layer components {
   .glass-panel {
     background: var(--gradient-glass);
-    backdrop-filter: blur(12px);
-    border: 1px solid hsl(0 0% 100% / 0.5);
+    backdrop-filter: blur(14px);
+    border: 1px solid hsl(0 0% 100% / 0.55);
   }
 
   .text-wash {
@@ -83,37 +88,85 @@
     color: transparent;
   }
 
+  .bg-wash {
+    background-image: var(--gradient-wash);
+  }
+
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3
       font-semibold text-primary-foreground transition-all duration-300
       hover:brightness-110 hover:-translate-y-0.5 active:translate-y-0;
-    box-shadow: 0 12px 28px -8px hsl(210 85% 50% / 0.45);
+    box-shadow: 0 14px 32px -10px hsl(210 85% 48% / 0.5);
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-md border border-primary/25
-      bg-white/50 px-6 py-3 font-semibold text-foreground backdrop-blur-sm
-      transition-all duration-300 hover:border-primary/50 hover:bg-white/80;
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-primary/20
+      bg-white/55 px-6 py-3 font-semibold text-foreground backdrop-blur-sm
+      transition-all duration-300 hover:border-primary/45 hover:bg-white/85 hover:-translate-y-0.5
+      active:translate-y-0;
   }
 
   .section-pad {
-    @apply px-4 py-20 md:py-28;
+    @apply px-4;
+    padding-top: 5.5rem;
+    padding-bottom: 5.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .section-pad {
+      padding-top: 7rem;
+      padding-bottom: 7rem;
+    }
+  }
+
+  .field-input {
+    @apply w-full rounded-md border border-border/90 bg-white/90 px-3.5 py-3 text-foreground
+      shadow-sm outline-none transition-shadow duration-200
+      placeholder:text-muted-foreground/70
+      focus:border-primary/40 focus:ring-2 focus:ring-primary/25;
   }
 
   .reveal {
-    animation: fade-up 0.8s ease-out both;
+    animation: fade-up 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .reveal-delay-1 {
-    animation-delay: 0.12s;
+    animation-delay: 0.1s;
   }
 
   .reveal-delay-2 {
-    animation-delay: 0.24s;
+    animation-delay: 0.2s;
   }
 
   .reveal-delay-3 {
-    animation-delay: 0.36s;
+    animation-delay: 0.3s;
+  }
+
+  .reveal-on-view {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .reveal-on-view.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .modal-backdrop {
+    animation: fade-in 0.22s ease-out both;
+  }
+
+  .modal-panel {
+    animation: modal-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @media (max-width: 639px) {
+    .modal-panel {
+      animation: modal-sheet-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
   }
 }
 
@@ -129,4 +182,65 @@
     white-space: nowrap;
     border-width: 0;
   }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes modal-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(40%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 10s linear infinite;
+}
+
+/* Keep Leaflet under site chrome */
+.leaflet-container {
+  z-index: 0;
+  font: inherit;
 }

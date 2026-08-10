@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import WhySection from "@/components/WhySection";
 import ServicesSection from "@/components/ServicesSection";
+import ImageStrip from "@/components/ImageStrip";
 import AboutSection from "@/components/AboutSection";
 import QuoteSection from "@/components/QuoteSection";
 import Footer from "@/components/Footer";
@@ -22,8 +23,9 @@ export default function Index() {
         <HeroSection onGetQuote={openQuote} onSeeServices={() => openPopup("services")} />
         <WhySection onLearnMore={() => openPopup("why")} onGetQuote={openQuote} />
         <ServicesSection onLearnMore={() => openPopup("services")} onGetQuote={openQuote} />
+        <ImageStrip />
         <AboutSection onLearnMore={() => openPopup("about")} onGetQuote={openQuote} />
-        <QuoteSection onGetQuote={openQuote} />
+        <QuoteSection />
       </main>
       <Footer onOpen={openPopup} onGetQuote={openQuote} />
       <SitePopups active={popup} onClose={closePopup} onOpenQuote={openQuote} />

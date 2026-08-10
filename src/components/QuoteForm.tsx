@@ -50,8 +50,8 @@ export default function QuoteForm({ idPrefix = "quote" }: QuoteFormProps) {
 
   if (submitted) {
     return (
-      <div className="flex flex-col items-start gap-4 py-4">
-        <CheckCircle2 className="h-12 w-12 text-primary" />
+      <div className="flex flex-col items-start gap-4 py-2">
+        <CheckCircle2 className="h-11 w-11 text-primary" />
         <h3 className="font-display text-2xl font-semibold text-foreground">Thanks — Mike got your request</h3>
         <p className="text-muted-foreground">
           We&apos;ll follow up soon with a quote for {form.service.toLowerCase()}.
@@ -71,8 +71,9 @@ export default function QuoteForm({ idPrefix = "quote" }: QuoteFormProps) {
           required
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className="w-full rounded-md border border-border bg-white/80 px-3 py-2.5 outline-none ring-primary focus:ring-2"
+          className="field-input"
           placeholder="Your name"
+          autoComplete="name"
         />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -86,8 +87,9 @@ export default function QuoteForm({ idPrefix = "quote" }: QuoteFormProps) {
             required
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            className="w-full rounded-md border border-border bg-white/80 px-3 py-2.5 outline-none ring-primary focus:ring-2"
+            className="field-input"
             placeholder="(513) 628-4128"
+            autoComplete="tel"
           />
         </div>
         <div>
@@ -99,8 +101,9 @@ export default function QuoteForm({ idPrefix = "quote" }: QuoteFormProps) {
             type="email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="w-full rounded-md border border-border bg-white/80 px-3 py-2.5 outline-none ring-primary focus:ring-2"
+            className="field-input"
             placeholder="you@email.com"
+            autoComplete="email"
           />
         </div>
       </div>
@@ -112,7 +115,7 @@ export default function QuoteForm({ idPrefix = "quote" }: QuoteFormProps) {
           id={id("service")}
           value={form.service}
           onChange={(e) => setForm({ ...form, service: e.target.value })}
-          className="w-full rounded-md border border-border bg-white/80 px-3 py-2.5 outline-none ring-primary focus:ring-2"
+          className="field-input"
         >
           <option>Storefront glass</option>
           <option>Commercial glass</option>
@@ -130,7 +133,7 @@ export default function QuoteForm({ idPrefix = "quote" }: QuoteFormProps) {
           rows={4}
           value={form.message}
           onChange={(e) => setForm({ ...form, message: e.target.value })}
-          className="w-full resize-y rounded-md border border-border bg-white/80 px-3 py-2.5 outline-none ring-primary focus:ring-2"
+          className="field-input resize-y"
           placeholder="Where are you? Storefront or commercial? How many panes? Preferred day?"
         />
       </div>

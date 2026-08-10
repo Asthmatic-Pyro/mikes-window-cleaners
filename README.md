@@ -24,6 +24,33 @@ npm run preview
 
 - Service area / copy in the section components under `src/components/`
 
+## Follow (`/Follow`)
+
+Public journey hub: city-level map, destinations, updates, community wall, support links, and name-on-car claims. Admin at `/Follow/admin`.
+
+### Setup
+
+1. Create a [Supabase](https://supabase.com) project
+2. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL Editor
+3. Auth → URL configuration: add redirect URL `https://your-domain/Follow/auth/callback` (and local `http://localhost:5173/Follow/auth/callback`)
+4. Auth → Email: enable magic link / OTP
+5. Copy env vars from [`.env.example`](.env.example) into `.env.local` and Vercel
+6. Sign up once with your email, then promote yourself:
+
+```sql
+update public.profiles set role = 'admin' where email = 'you@example.com';
+```
+
+7. In `/Follow/admin` → Support, paste Buy Me a Coffee, Cash App, Amazon wishlist, and mailbox copy
+
+| Variable | Purpose |
+|----------|---------|
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon/public key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only key for follower emails |
+| `SITE_URL` | Used in notification email links |
+| `RESEND_API_KEY` / `EMAIL_FROM` | Same as quote form (follower emails) |
+
 ## Quote form (Resend)
 
 Quote requests POST to `/api/quote` and are emailed via [Resend](https://resend.com).

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import type { PopupId } from "@/components/SitePopups";
 
@@ -23,10 +24,10 @@ export default function Header({ onGetQuote, onOpen }: HeaderProps) {
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/40 bg-white/55 backdrop-blur-md">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/50 bg-white/65 shadow-[0_8px_30px_-18px_rgba(20,50,90,0.35)] backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <a href="#top" className="group flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-wash text-white shadow-sm">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-wash text-white shadow-sm shadow-primary/30">
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
               <rect x="4" y="5" width="12" height="14" stroke="currentColor" strokeWidth="1.8" />
               <path d="M10 5v14M4 12h12" stroke="currentColor" strokeWidth="1.5" />
@@ -49,6 +50,12 @@ export default function Header({ onGetQuote, onOpen }: HeaderProps) {
               {item.label}
             </button>
           ))}
+          <Link
+            to="/Follow"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            Follow
+          </Link>
           <a
             href="tel:+15136284128"
             className="text-sm font-semibold text-primary transition-colors hover:underline"
@@ -63,7 +70,7 @@ export default function Header({ onGetQuote, onOpen }: HeaderProps) {
         <div className="flex items-center gap-2 md:hidden">
           <a
             href="tel:+15136284128"
-            className="rounded-md border border-border bg-white/70 px-2.5 py-2 text-xs font-semibold text-primary"
+            className="rounded-md border border-border/80 bg-white/80 px-2.5 py-2 text-xs font-semibold text-primary"
             aria-label="Call (513) 628-4128"
           >
             Call
@@ -73,8 +80,9 @@ export default function Header({ onGetQuote, onOpen }: HeaderProps) {
           </button>
           <button
             type="button"
-            className="rounded-md border border-border bg-white/70 p-2"
+            className="rounded-md border border-border/80 bg-white/80 p-2"
             aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -83,18 +91,25 @@ export default function Header({ onGetQuote, onOpen }: HeaderProps) {
       </div>
 
       {open && (
-        <div className="border-t border-white/50 bg-white/90 backdrop-blur-md md:hidden">
+        <div className="border-t border-white/60 bg-white/95 backdrop-blur-xl md:hidden">
           <nav className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3">
             {navItems.map((item) => (
               <button
                 key={item.id}
                 type="button"
-                className="rounded-md px-3 py-2.5 text-left text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-primary"
+                className="rounded-md px-3 py-2.5 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
                 onClick={() => handleNav(item.id)}
               >
                 {item.label}
               </button>
             ))}
+            <Link
+              to="/Follow"
+              className="rounded-md px-3 py-2.5 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
+              onClick={() => setOpen(false)}
+            >
+              Follow
+            </Link>
           </nav>
         </div>
       )}

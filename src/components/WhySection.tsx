@@ -1,4 +1,5 @@
 import { Droplets, Eye, Sparkles, Store } from "lucide-react";
+import Reveal from "@/components/Reveal";
 
 const points = [
   {
@@ -14,12 +15,12 @@ const points = [
   {
     icon: Droplets,
     title: "Worried about streaks and water spots?",
-    description: "Amateur washes leave more mess than they remove. We finish with streak-free clarity.",
+    description: "Amateur washes leave more mess than they remove. Mike finishes with streak-free clarity.",
   },
   {
     icon: Sparkles,
     title: "Need ground-level work done right?",
-    description: "No ladders — Mike works with reach poles from the Metro. Careful on every pane, no shortcuts.",
+    description: "No ladders — reach poles from the Metro. Careful on every pane, no shortcuts.",
   },
 ];
 
@@ -32,46 +33,45 @@ export default function WhySection({ onLearnMore, onGetQuote }: WhySectionProps)
   return (
     <section id="why" className="section-pad">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-14 max-w-2xl">
-          <h2 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            Let&apos;s talk about{" "}
-            <span className="text-wash">your windows</span>
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Most people put off window washing until everything looks cloudy. If that sounds like you, book a one-time
-            clean when Mike&apos;s in your area.
-          </p>
-        </div>
+        <Reveal>
+          <div className="mb-14 max-w-2xl">
+            <h2 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+              Let&apos;s talk about{" "}
+              <span className="text-wash">your windows</span>
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Most people wait until the glass looks cloudy. Book a one-time clean when Mike&apos;s in your area —
+              Greater Cincinnati and wherever the Metro can park.
+            </p>
+          </div>
+        </Reveal>
 
-        <div className="grid gap-10 sm:grid-cols-2">
-          {points.map((point) => (
-            <button
-              key={point.title}
-              type="button"
-              onClick={onLearnMore}
-              className="group flex gap-4 rounded-lg text-left transition-transform duration-300 hover:-translate-y-0.5"
-            >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-wash text-white transition-transform duration-300 group-hover:scale-105">
-                <point.icon className="h-5 w-5" />
+        <div className="grid gap-x-12 gap-y-10 sm:grid-cols-2">
+          {points.map((point, i) => (
+            <Reveal key={point.title} delayMs={i * 70}>
+              <div className="flex gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-wash text-white shadow-sm shadow-primary/25">
+                  <point.icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-display text-xl font-semibold text-foreground">{point.title}</h3>
+                  <p className="mt-2 leading-relaxed text-muted-foreground">{point.description}</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-display text-xl font-semibold text-foreground group-hover:text-primary">
-                  {point.title}
-                </h3>
-                <p className="mt-2 text-muted-foreground leading-relaxed">{point.description}</p>
-              </div>
-            </button>
+            </Reveal>
           ))}
         </div>
 
-        <div className="mt-12 flex flex-wrap gap-3">
-          <button type="button" onClick={onLearnMore} className="btn-secondary">
-            Learn more
-          </button>
-          <button type="button" onClick={onGetQuote} className="btn-primary">
-            Get a Free Quote
-          </button>
-        </div>
+        <Reveal delayMs={120}>
+          <div className="mt-14 flex flex-wrap gap-3">
+            <button type="button" onClick={onLearnMore} className="btn-secondary">
+              Why it matters
+            </button>
+            <button type="button" onClick={onGetQuote} className="btn-primary">
+              Get a Free Quote
+            </button>
+          </div>
+        </Reveal>
       </div>
     </section>
   );
