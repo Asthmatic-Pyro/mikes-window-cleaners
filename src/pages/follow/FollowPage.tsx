@@ -7,6 +7,7 @@ import UpdatesFeed from "@/components/follow/UpdatesFeed";
 import CommunityWall from "@/components/follow/CommunityWall";
 import SupportSection from "@/components/follow/SupportSection";
 import NameOnCar from "@/components/follow/NameOnCar";
+import { useAuth } from "@/contexts/AuthContext";
 import { useWeather } from "@/contexts/WeatherContext";
 import {
   getApprovedNames,
