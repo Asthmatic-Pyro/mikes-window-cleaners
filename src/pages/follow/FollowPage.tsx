@@ -143,12 +143,11 @@ export default function FollowPage() {
               />
             </div>
           )}
+
+          <DestinationsList destinations={destinations} />
         </section>
 
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-12">
-          <DestinationsList destinations={destinations} />
-          <UpdatesFeed posts={posts} />
-        </div>
+        <UpdatesFeed posts={posts} />
 
         {/* Secondary: light support + social */}
         <div className="space-y-10 border-t border-border/50 pt-10">
