@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Coffee, CreditCard, ExternalLink, Wallet } from "lucide-react";
+import { Coffee, CreditCard, ExternalLink, Send, Wallet } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { submitNameClaim } from "@/lib/follow/api";
 import {
@@ -40,7 +40,7 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
   const parsed = Number(amount);
   const minAmount = tier === "windshield" ? 100 : 1;
   const validAmount = Number.isFinite(parsed) && parsed >= minAmount;
-  const payUrl = validAmount ? checkoutUrl(method, settings, parsed) : "";
+  const payUrl = validAmount ? checkoutUrl(method, settings, parsed, displayName.trim()) : "";
 
   const selectTier = (next: NameTier) => {
     setTier(next);
@@ -224,15 +224,20 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
 
             <fieldset className="space-y-2">
               <legend className="text-sm font-medium">Pay with</legend>
-              <div className="grid gap-2 sm:grid-cols-3">
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 {methods.map((m) => {
-                  const Icon = m === "streamelements" ? CreditCard : m === "cashapp" ? Wallet : Coffee;
+                  const Icon =
+                    m === "streamelements" ? CreditCard : m === "cashapp" ? Wallet : m === "venmo" ? Send : Coffee;
                   const hint =
                     m === "streamelements"
                       ? "Card or PayPal"
                       : m === "cashapp"
                         ? settings?.cash_app_tag || "Send directly"
-                        : "Tip on BMC";
+                        : m === "venmo"
+                          ? settings?.venmo_tag
+                            ? `@${settings.venmo_tag.replace(/^@/, "")}`
+                            : "@Michael-Pyro"
+                          : "Tip on BMC";
                   return (
                     <button
                       key={m}
@@ -262,6 +267,12 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
               {method === "cashapp" && (
                 <p className="text-xs text-muted-foreground">
                   Cash App opens with {validAmount ? formatUsd(parsed) : "your amount"} filled in.
+                </p>
+              )}
+              {method === "venmo" && (
+                <p className="text-xs text-muted-foreground">
+                  Venmo opens with {validAmount ? formatUsd(parsed) : "your amount"} filled in. Put the name in
+                  the note.
                 </p>
               )}
             </fieldset>

@@ -60,6 +60,7 @@
       var(--gradient-hero);
     background-attachment: fixed;
     min-height: 100vh;
+    transition: background-image 1.2s ease;
   }
 
   h1,
@@ -243,4 +244,183 @@
 .leaflet-container {
   z-index: 0;
   font: inherit;
+}
+
+.journey-pin-wrap {
+  background: none !important;
+  border: none !important;
+}
+
+.journey-pin--here {
+  transform-origin: bottom center;
+  animation: journey-pin-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes journey-pin-pulse {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+/* Live sky — body wash follows Mike's weather */
+html[data-sky="clear-day"] body {
+  background-image:
+    radial-gradient(ellipse 55% 42% at 88% -6%, hsl(48 100% 68% / 0.72), transparent 58%),
+    radial-gradient(ellipse 70% 48% at 8% -8%, hsl(199 90% 68% / 0.45), transparent),
+    linear-gradient(180deg, hsl(198 82% 74%) 0%, hsl(210 48% 93%) 58%, hsl(42 80% 90%) 100%);
+}
+
+html[data-sky="clear-night"] body {
+  background-image:
+    radial-gradient(ellipse 40% 32% at 78% 8%, hsl(230 55% 42% / 0.45), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 12% -10%, hsl(250 40% 38% / 0.28), transparent),
+    linear-gradient(180deg, hsl(226 38% 28%) 0%, hsl(220 32% 78%) 62%, hsl(210 30% 90%) 100%);
+}
+
+html[data-sky="cloudy"] body {
+  background-image:
+    radial-gradient(ellipse 60% 40% at 20% 0%, hsl(210 20% 78% / 0.7), transparent 55%),
+    radial-gradient(ellipse 50% 36% at 90% 8%, hsl(210 18% 70% / 0.45), transparent),
+    linear-gradient(180deg, hsl(210 22% 72%) 0%, hsl(210 28% 90%) 100%);
+}
+
+html[data-sky="overcast"] body {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, hsl(215 12% 62% / 0.55), transparent),
+    linear-gradient(180deg, hsl(215 14% 64%) 0%, hsl(210 18% 86%) 100%);
+}
+
+html[data-sky="fog"] body {
+  background-image:
+    radial-gradient(ellipse 90% 60% at 50% 20%, hsl(200 10% 88% / 0.85), transparent 70%),
+    linear-gradient(180deg, hsl(200 12% 80%) 0%, hsl(210 16% 92%) 100%);
+}
+
+html[data-sky="rain"] body {
+  background-image:
+    radial-gradient(ellipse 70% 45% at 10% 0%, hsl(210 40% 42% / 0.35), transparent),
+    linear-gradient(180deg, hsl(210 32% 46%) 0%, hsl(210 28% 78%) 55%, hsl(210 24% 88%) 100%);
+}
+
+html[data-sky="snow"] body {
+  background-image:
+    radial-gradient(ellipse 60% 40% at 80% 0%, hsl(210 40% 96% / 0.9), transparent),
+    linear-gradient(180deg, hsl(210 30% 82%) 0%, hsl(210 28% 94%) 55%, hsl(0 0% 98%) 100%);
+}
+
+html[data-sky="storm"] body {
+  background-image:
+    radial-gradient(ellipse 55% 40% at 70% 10%, hsl(260 30% 38% / 0.4), transparent),
+    linear-gradient(180deg, hsl(230 24% 28%) 0%, hsl(220 20% 52%) 45%, hsl(210 22% 82%) 100%);
+}
+
+.weather-fx {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.weather-sun {
+  position: absolute;
+  top: -6rem;
+  right: 8%;
+  width: 18rem;
+  height: 18rem;
+  border-radius: 9999px;
+  background: radial-gradient(circle, hsl(48 100% 70% / 0.7) 0%, hsl(42 100% 60% / 0.2) 42%, transparent 70%);
+}
+
+.weather-stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, hsl(0 0% 100% / 0.85), transparent),
+    radial-gradient(1.5px 1.5px at 28% 8%, hsl(0 0% 100% / 0.7), transparent),
+    radial-gradient(1px 1px at 46% 22%, hsl(0 0% 100% / 0.8), transparent),
+    radial-gradient(1.5px 1.5px at 63% 12%, hsl(0 0% 100% / 0.65), transparent),
+    radial-gradient(1px 1px at 81% 20%, hsl(0 0% 100% / 0.8), transparent),
+    radial-gradient(1px 1px at 90% 6%, hsl(0 0% 100% / 0.55), transparent),
+    radial-gradient(1.5px 1.5px at 8% 40%, hsl(0 0% 100% / 0.5), transparent);
+  opacity: 0.7;
+}
+
+.weather-fog {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 40% at 30% 20%, hsl(0 0% 100% / 0.35), transparent 70%),
+    radial-gradient(ellipse 70% 35% at 75% 35%, hsl(210 20% 90% / 0.4), transparent 70%);
+}
+
+.weather-rain,
+.weather-snow {
+  position: absolute;
+  inset: -20% 0;
+}
+
+.weather-rain {
+  background-image: repeating-linear-gradient(
+    -18deg,
+    transparent 0,
+    transparent 14px,
+    hsl(210 40% 90% / 0.28) 14px,
+    hsl(210 40% 90% / 0.28) 16px
+  );
+  animation: weather-rain-fall 0.55s linear infinite;
+}
+
+.weather-snow {
+  background-image:
+    radial-gradient(2px 2px at 10% 20%, hsl(0 0% 100% / 0.9), transparent),
+    radial-gradient(3px 3px at 30% 40%, hsl(0 0% 100% / 0.8), transparent),
+    radial-gradient(2px 2px at 55% 10%, hsl(0 0% 100% / 0.85), transparent),
+    radial-gradient(3px 3px at 75% 50%, hsl(0 0% 100% / 0.75), transparent),
+    radial-gradient(2px 2px at 90% 30%, hsl(0 0% 100% / 0.8), transparent),
+    radial-gradient(2px 2px at 20% 70%, hsl(0 0% 100% / 0.7), transparent),
+    radial-gradient(3px 3px at 45% 80%, hsl(0 0% 100% / 0.8), transparent),
+    radial-gradient(2px 2px at 68% 75%, hsl(0 0% 100% / 0.75), transparent);
+  background-size: 220px 280px;
+  animation: weather-snow-fall 9s linear infinite;
+}
+
+.weather-flash {
+  position: absolute;
+  inset: 0;
+  background: hsl(230 40% 90% / 0.0);
+  animation: weather-flash 7s ease-in-out infinite;
+}
+
+@keyframes weather-rain-fall {
+  to {
+    transform: translateY(28px);
+  }
+}
+
+@keyframes weather-snow-fall {
+  to {
+    transform: translateY(280px);
+  }
+}
+
+@keyframes weather-flash {
+  0%,
+  88%,
+  100% {
+    background: transparent;
+  }
+  90% {
+    background: hsl(230 40% 95% / 0.28);
+  }
+  92% {
+    background: transparent;
+  }
+  93% {
+    background: hsl(230 40% 95% / 0.18);
+  }
 }

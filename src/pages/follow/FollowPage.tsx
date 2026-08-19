@@ -7,7 +7,7 @@ import UpdatesFeed from "@/components/follow/UpdatesFeed";
 import CommunityWall from "@/components/follow/CommunityWall";
 import SupportSection from "@/components/follow/SupportSection";
 import NameOnCar from "@/components/follow/NameOnCar";
-import { useAuth } from "@/contexts/AuthContext";
+import { useWeather } from "@/contexts/WeatherContext";
 import {
   getApprovedNames,
   getDestinations,
@@ -27,6 +27,7 @@ import type {
 
 export default function FollowPage() {
   const { configured, user, updateProfile, profile } = useAuth();
+  const { weather } = useWeather();
   const [location, setLocation] = useState<LocationPublic | null>(null);
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -123,19 +124,20 @@ export default function FollowPage() {
                 </div>
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full bg-primary" /> Here
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#2563eb]" /> Here
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/50" /> Visited
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#16a34a]" /> Visited
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full bg-border" /> Upcoming
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#f59e0b]" /> Upcoming
                   </span>
                 </div>
               </div>
               <JourneyMap
                 location={location}
                 destinations={destinations}
+                weather={weather}
                 className="h-[min(62vh,480px)] min-h-[300px]"
               />
             </div>

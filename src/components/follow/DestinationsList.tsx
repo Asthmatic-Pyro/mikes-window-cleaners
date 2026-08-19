@@ -49,10 +49,10 @@ export default function DestinationsList({ destinations }: DestinationsListProps
             <span
               className={`relative z-10 mt-1.5 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-white shadow-sm ${
                 d.status === "current"
-                  ? "bg-primary"
+                  ? "bg-[#0891b2]"
                   : d.status === "done"
-                    ? "bg-muted-foreground/50"
-                    : "bg-border"
+                    ? "bg-[#16a34a]"
+                    : "bg-[#f59e0b]"
               }`}
               aria-hidden
             />

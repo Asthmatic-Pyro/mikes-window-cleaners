@@ -1,36 +1,46 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import WeatherBadge from "@/components/follow/WeatherBadge";
 import type { Destination } from "@/lib/follow/types";
+import type { LiveWeather } from "@/lib/follow/weather";
 
 type JourneyMapProps = {
   location: { city_label: string; lat: number; lng: number };
   destinations: Destination[];
+  weather?: LiveWeather | null;
   className?: string;
 };
 
 function statusColor(status: Destination["status"] | "here") {
-  if (status === "here" || status === "current") return "hsl(210 85% 48%)";
-  if (status === "done") return "hsl(210 25% 55%)";
-  return "hsl(210 20% 72%)";
+  if (status === "here") return "#2563eb";
+  if (status === "current") return "#0891b2";
+  if (status === "done") return "#16a34a";
+  return "#f59e0b";
 }
 
 function makeIcon(status: Destination["status"] | "here", large = false) {
-  const size = large ? 20 : 14;
+  const w = large ? 30 : 24;
+  const h = large ? 42 : 34;
   const color = statusColor(status);
+  const pulse = status === "here" ? " journey-pin--here" : "";
   return L.divIcon({
-    className: "",
-    html: `<div style="
-      width:${size}px;height:${size}px;border-radius:9999px;
-      background:${color};border:3px solid white;
-      box-shadow:0 4px 14px rgba(20,50,90,0.35);
-    "></div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
+    className: "journey-pin-wrap",
+    html: `<div class="journey-pin${pulse}" style="width:${w}px;height:${h}px;filter:drop-shadow(0 4px 8px rgba(15,40,80,.4))">
+      <svg viewBox="0 0 24 36" width="${w}" height="${h}" aria-hidden="true">
+        <path fill="${color}" stroke="#fff" stroke-width="1.8"
+          d="M12 1.6c-5.15 0-9.4 4.15-9.4 9.35 0 7.2 9.4 23.4 9.4 23.4s9.4-16.2 9.4-23.4C21.4 5.75 17.15 1.6 12 1.6z"/>
+        <circle cx="12" cy="11" r="4.35" fill="#fff"/>
+        <circle cx="12" cy="11" r="2.15" fill="${color}"/>
+      </svg>
+    </div>`,
+    iconSize: [w, h],
+    iconAnchor: [w / 2, h - 1],
+    popupAnchor: [0, -h + 10],
   });
 }
 
-export default function JourneyMap({ location, destinations, className }: JourneyMapProps) {
+export default function JourneyMap({ location, destinations, weather, className }: JourneyMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);
@@ -82,14 +92,20 @@ export default function JourneyMap({ location, destinations, className }: Journe
     const here: L.LatLngExpression = [location.lat, location.lng];
     points.push(here);
     L.marker(here, { icon: makeIcon("here", true) })
-      .bindPopup(`<strong>Mike is here</strong><br/>${location.city_label}`)
+      .bindPopup(
+        `<strong>Mike is here</strong><br/>${location.city_label}${
+          weather
+            ? `<br/>${weather.temperatureF}°F · ${weather.label}`
+            : ""
+        }`,
+      )
       .addTo(layer);
 
     if (routePoints.length >= 2) {
       L.polyline(routePoints, {
-        color: "hsl(210 85% 48%)",
+        color: "#2563eb",
         weight: 3,
-        opacity: 0.55,
+        opacity: 0.7,
         dashArray: "8 8",
       }).addTo(layer);
     }
@@ -99,7 +115,7 @@ export default function JourneyMap({ location, destinations, className }: Journe
     } else {
       map.fitBounds(L.latLngBounds(points), { padding: [36, 36], maxZoom: 7, animate: true });
     }
-  }, [location, destinations]);
+  }, [location, destinations, weather]);
 
   useEffect(() => {
     return () => {
@@ -110,8 +126,9 @@ export default function JourneyMap({ location, destinations, className }: Journe
   }, []);
 
   return (
-    <div className={className}>
+    <div className={`relative ${className ?? ""}`}>
       <div ref={containerRef} className="h-full min-h-[280px] w-full" />
+      {weather && <WeatherBadge weather={weather} />}
     </div>
   );
 }

@@ -89,6 +89,8 @@ export type SiteSettings = {
   buy_me_a_coffee_url: string;
   cash_app_url: string;
   cash_app_tag: string;
+  venmo_url: string;
+  venmo_tag: string;
   amazon_wishlist_url: string;
   mailbox_address: string;
   mailbox_notes: string;

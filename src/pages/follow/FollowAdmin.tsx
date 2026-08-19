@@ -507,6 +507,24 @@ export default function FollowAdmin() {
               />
             </label>
             <label className="block space-y-1">
+              <span className="text-sm font-medium">Venmo URL</span>
+              <input
+                className="field-input"
+                value={settings.venmo_url ?? ""}
+                onChange={(e) => setSettings({ ...settings, venmo_url: e.target.value })}
+                placeholder="https://venmo.com/code?user_id=…"
+              />
+            </label>
+            <label className="block space-y-1">
+              <span className="text-sm font-medium">Venmo username</span>
+              <input
+                className="field-input"
+                value={settings.venmo_tag ?? ""}
+                onChange={(e) => setSettings({ ...settings, venmo_tag: e.target.value })}
+                placeholder="@Michael-Pyro"
+              />
+            </label>
+            <label className="block space-y-1">
               <span className="text-sm font-medium">Amazon wishlist URL</span>
               <input
                 className="field-input"

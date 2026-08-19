@@ -1,5 +1,5 @@
-import { Coffee, CreditCard, Gift, Mail, Wallet } from "lucide-react";
-import { STREAM_ELEMENTS_DEFAULT, withHttps } from "@/lib/follow/payments";
+import { Coffee, CreditCard, Gift, Mail, Send, Wallet } from "lucide-react";
+import { STREAM_ELEMENTS_DEFAULT, VENMO_DEFAULT, withHttps } from "@/lib/follow/payments";
 import type { SiteSettings } from "@/lib/follow/types";
 
 type SupportSectionProps = {
@@ -30,6 +30,13 @@ export default function SupportSection({ settings }: SupportSectionProps) {
       hint: "Send a tip directly",
     },
     {
+      key: "venmo",
+      label: settings?.venmo_tag ? `Venmo @${settings.venmo_tag.replace(/^@/, "")}` : "Venmo",
+      href: withHttps(settings?.venmo_url || VENMO_DEFAULT),
+      icon: Send,
+      hint: "Send a Venmo",
+    },
+    {
       key: "amazon",
       label: "Amazon wishlist",
       href: withHttps(settings?.amazon_wishlist_url ?? ""),
@@ -47,7 +54,7 @@ export default function SupportSection({ settings }: SupportSectionProps) {
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {links.length === 0 && (
           <p className="text-sm text-muted-foreground sm:col-span-2">Support links will appear here soon.</p>
         )}

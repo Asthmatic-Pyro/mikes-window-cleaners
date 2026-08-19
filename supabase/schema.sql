@@ -96,6 +96,8 @@ create table if not exists public.site_settings (
   buy_me_a_coffee_url text not null default '',
   cash_app_url text not null default '',
   cash_app_tag text not null default '',
+  venmo_url text not null default '',
+  venmo_tag text not null default '',
   amazon_wishlist_url text not null default '',
   mailbox_address text not null default '',
   mailbox_notes text not null default '',
