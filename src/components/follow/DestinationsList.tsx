@@ -34,7 +34,7 @@ export default function DestinationsList({ destinations }: DestinationsListProps
         </div>
       )}
 
-      <ol className="space-y-0">
+      <ol className="max-h-[min(70vh,560px)] space-y-0 overflow-y-auto pr-1">
         {destinations.length === 0 && (
           <li className="text-sm text-muted-foreground">Destination stops will show up here.</li>
         )}
@@ -71,6 +71,9 @@ export default function DestinationsList({ destinations }: DestinationsListProps
                   {statusLabel[d.status]}
                 </span>
               </div>
+              {d.city_label && d.city_label !== d.name && (
+                <p className="text-xs text-muted-foreground">{d.city_label}</p>
+              )}
             </div>
           </li>
         ))}

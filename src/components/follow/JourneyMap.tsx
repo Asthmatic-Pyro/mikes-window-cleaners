@@ -85,7 +85,11 @@ export default function JourneyMap({ location, destinations, weather, className 
       points.push(latlng);
       routePoints.push(latlng);
       L.marker(latlng, { icon: makeIcon(d.status) })
-        .bindPopup(`<strong>${d.name}</strong><br/>${d.status === "done" ? "Visited" : d.status === "current" ? "Current stop" : "Upcoming"}`)
+        .bindPopup(
+          `<strong>${d.name}</strong><br/>${d.city_label ?? ""}${
+            d.city_label ? "<br/>" : ""
+          }${d.status === "done" ? "Visited" : d.status === "current" ? "Current stop" : "Upcoming"}`,
+        )
         .addTo(layer);
     }
 
@@ -104,16 +108,15 @@ export default function JourneyMap({ location, destinations, weather, className 
     if (routePoints.length >= 2) {
       L.polyline(routePoints, {
         color: "#2563eb",
-        weight: 3,
-        opacity: 0.7,
-        dashArray: "8 8",
+        weight: 4,
+        opacity: 0.85,
       }).addTo(layer);
     }
 
     if (points.length === 1) {
       map.setView(here, 6, { animate: true });
     } else {
-      map.fitBounds(L.latLngBounds(points), { padding: [36, 36], maxZoom: 7, animate: true });
+      map.fitBounds(L.latLngBounds(points), { padding: [28, 28], maxZoom: 5, animate: true });
     }
   }, [location, destinations, weather]);
 

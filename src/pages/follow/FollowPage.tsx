@@ -109,7 +109,7 @@ export default function FollowPage() {
               Follow Mike
             </h1>
             <p className="mt-2 max-w-xl text-muted-foreground">
-              Where he is, where he&apos;s headed, and how far along the route.
+              Cincinnati to Seattle the long way — Great Lakes, Atlantic, Gulf, Southwest, then the Pacific.
             </p>
           </div>
 
