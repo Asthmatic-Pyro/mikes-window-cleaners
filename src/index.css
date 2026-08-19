@@ -246,6 +246,12 @@
   font: inherit;
 }
 
+/* Radar frames are preloaded; don't fade individual tiles in and out. */
+.leaflet-radar-pane .leaflet-tile {
+  visibility: visible;
+  opacity: 1 !important;
+}
+
 .journey-pin-wrap {
   background: none !important;
   border: none !important;

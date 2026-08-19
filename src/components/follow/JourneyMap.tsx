@@ -7,6 +7,9 @@ import type { Destination } from "@/lib/follow/types";
 import type { LiveWeather } from "@/lib/follow/weather";
 
 const RADAR_API = "https://api.rainviewer.com/public/weather-maps.json";
+const RADAR_OPACITY = 0.8;
+const RADAR_FRAME_MS = 700;
+const RADAR_HOLD_MS = 2400;
 
 type RadarFrame = { time: number; path: string };
 
@@ -57,7 +60,6 @@ export default function JourneyMap({ location, destinations, weather, className 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
-  const radarRef = useRef<L.TileLayer | null>(null);
   const [radarOn, setRadarOn] = useState(true);
   const [radarTime, setRadarTime] = useState<string | null>(null);
 
@@ -92,7 +94,6 @@ export default function JourneyMap({ location, destinations, weather, className 
       map.remove();
       mapRef.current = null;
       markersRef.current = null;
-      radarRef.current = null;
     };
     // Map is created once; later location changes are handled by the marker effect.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -153,42 +154,93 @@ export default function JourneyMap({ location, destinations, weather, className 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !radarOn) {
-      radarRef.current?.remove();
-      radarRef.current = null;
       setRadarTime(null);
       return;
     }
 
     let cancelled = false;
-    let frameTimer: number | undefined;
-    let refreshTimer: number | undefined;
-    let frameIndex = 0;
+    let playTimer = 0;
+    let startTimer = 0;
+    let refreshTimer = 0;
+    const layers: L.TileLayer[] = [];
+    let current = -1;
     let loop: RadarFrame[] = [];
-    let host = "";
+    let started = false;
+    let mountedKey = "";
 
-    const showFrame = (frame: RadarFrame) => {
-      if (!mapRef.current) return;
-      const url = radarTileUrl(host, frame.path);
-      if (!radarRef.current) {
-        radarRef.current = L.tileLayer(url, {
-          pane: "radar",
-          opacity: 0.8,
-          maxNativeZoom: 7,
-          maxZoom: 12,
-          attribution: '<a href="https://www.rainviewer.com/">RainViewer</a>',
-        }).addTo(mapRef.current);
-      } else {
-        radarRef.current.setUrl(url);
-      }
-      setRadarTime(frameClock(frame.time));
+    const clearTimers = () => {
+      window.clearTimeout(playTimer);
+      window.clearTimeout(startTimer);
     };
 
-    const tick = () => {
+    const removeLayers = () => {
+      clearTimers();
+      for (const layer of layers) {
+        layer.off();
+        layer.remove();
+      }
+      layers.length = 0;
+      current = -1;
+      started = false;
+    };
+
+    const showIndex = (i: number) => {
+      const next = layers[i];
+      if (!next) return;
+      next.setOpacity(RADAR_OPACITY);
+      if (current >= 0 && current !== i) layers[current]?.setOpacity(0);
+      current = i;
+      const frame = loop[i];
+      if (frame) setRadarTime(frameClock(frame.time));
+    };
+
+    const playFrom = (i: number) => {
       if (cancelled || loop.length === 0) return;
-      showFrame(loop[frameIndex]);
-      const last = frameIndex === loop.length - 1;
-      frameIndex = (frameIndex + 1) % loop.length;
-      frameTimer = window.setTimeout(tick, last ? 1800 : 420);
+      showIndex(i);
+      const last = i === loop.length - 1;
+      playTimer = window.setTimeout(() => playFrom((i + 1) % loop.length), last ? RADAR_HOLD_MS : RADAR_FRAME_MS);
+    };
+
+    const beginAnimation = () => {
+      if (cancelled || started || layers.length === 0) return;
+      started = true;
+      window.clearTimeout(startTimer);
+      showIndex(layers.length - 1);
+      playTimer = window.setTimeout(() => playFrom(0), RADAR_HOLD_MS);
+    };
+
+    const mountFrames = (host: string, frames: RadarFrame[]) => {
+      const key = frames.map((f) => f.path).join("|");
+      if (key === mountedKey && layers.length) return;
+      mountedKey = key;
+      removeLayers();
+      loop = frames;
+      if (!mapRef.current) return;
+
+      let pending = frames.length;
+      frames.forEach((frame) => {
+        const layer = L.tileLayer(radarTileUrl(host, frame.path), {
+          pane: "radar",
+          opacity: 0.001,
+          maxNativeZoom: 7,
+          maxZoom: 12,
+          keepBuffer: 6,
+          updateWhenIdle: true,
+          updateWhenZooming: false,
+          className: "radar-frame",
+          attribution: '<a href="https://www.rainviewer.com/">RainViewer</a>',
+        });
+        layer.once("load", () => {
+          if (cancelled) return;
+          if (layers.indexOf(layer) !== current) layer.setOpacity(0);
+          pending -= 1;
+          if (pending <= 0) beginAnimation();
+        });
+        layer.addTo(mapRef.current!);
+        layers.push(layer);
+      });
+
+      startTimer = window.setTimeout(beginAnimation, 2500);
     };
 
     const load = async () => {
@@ -201,25 +253,21 @@ export default function JourneyMap({ location, destinations, weather, className 
         };
         const frames = json.radar?.past ?? [];
         if (cancelled || !json.host || frames.length === 0) return;
-
-        host = json.host;
-        loop = frames.slice(-10);
-        frameIndex = 0;
-        if (frameTimer) window.clearTimeout(frameTimer);
-        tick();
+        mountFrames(json.host, frames.slice(-8));
       } catch {
         if (cancelled || !mapRef.current) return;
-        radarRef.current?.remove();
-        radarRef.current = L.tileLayer.wms("https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0q.cgi", {
+        removeLayers();
+        const fallback = L.tileLayer.wms("https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0q.cgi", {
           layers: "nexrad-n0q-900913",
           format: "image/png",
           transparent: true,
           pane: "radar",
-          opacity: 0.8,
+          opacity: RADAR_OPACITY,
           maxZoom: 12,
           attribution: '&copy; <a href="https://mesonet.agron.iastate.edu/">IEM</a> NEXRAD',
         });
-        radarRef.current.addTo(mapRef.current);
+        fallback.addTo(mapRef.current);
+        layers.push(fallback);
         setRadarTime("Live");
       }
     };
@@ -229,10 +277,8 @@ export default function JourneyMap({ location, destinations, weather, className 
 
     return () => {
       cancelled = true;
-      if (frameTimer) window.clearTimeout(frameTimer);
-      if (refreshTimer) window.clearInterval(refreshTimer);
-      radarRef.current?.remove();
-      radarRef.current = null;
+      window.clearInterval(refreshTimer);
+      removeLayers();
     };
   }, [radarOn]);
 
