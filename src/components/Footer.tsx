@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { LINKTREE_URL } from "@/lib/links";
 import type { PopupId } from "@/components/SitePopups";
 
 type FooterProps = {
@@ -39,6 +40,14 @@ export default function Footer({ onOpen, onGetQuote }: FooterProps) {
           <Link to="/Follow" className="transition-colors hover:text-white">
             Follow Mike
           </Link>
+          <a
+            href={LINKTREE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors hover:text-white"
+          >
+            Linktree
+          </a>
         </nav>
       </div>
       <div className="border-t border-white/10">

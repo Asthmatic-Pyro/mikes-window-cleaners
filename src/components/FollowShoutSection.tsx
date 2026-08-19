@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import Reveal from "@/components/Reveal";
+import { LINKTREE_URL } from "@/lib/links";
 
 export default function FollowShoutSection() {
   return (
@@ -23,10 +24,20 @@ export default function FollowShoutSection() {
             Tip any amount and your actual name goes on the Metro. Not a username. Your name. On the car. $100+ takes
             the windshield.
           </p>
-          <Link to="/Follow" className="btn-primary mt-8 bg-white text-primary hover:bg-white">
-            Follow the trip
-            <ArrowRight className="h-5 w-5" />
-          </Link>
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <Link to="/Follow" className="btn-primary bg-white text-primary hover:bg-white">
+              Follow the trip
+              <ArrowRight className="h-5 w-5" />
+            </Link>
+            <a
+              href={LINKTREE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-semibold text-white/85 underline-offset-4 hover:text-white hover:underline"
+            >
+              Linktree
+            </a>
+          </div>
         </Reveal>
       </div>
     </section>

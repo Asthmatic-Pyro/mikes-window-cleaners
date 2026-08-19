@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { LINKTREE_URL } from "@/lib/links";
 
 export default function FollowHeader() {
   const { user, profile, isAdmin, signOut, loading } = useAuth();
@@ -17,6 +18,14 @@ export default function FollowHeader() {
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
+          <a
+            href={LINKTREE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-medium text-muted-foreground hover:text-primary"
+          >
+            Linktree
+          </a>
           {!loading && user ? (
             <>
               <span className="hidden max-w-[10rem] truncate text-sm text-muted-foreground sm:inline">

@@ -1,4 +1,5 @@
-import { Coffee, CreditCard, Gift, Mail, Send, Wallet } from "lucide-react";
+import { Coffee, CreditCard, Gift, Link2, Mail, Send, Wallet } from "lucide-react";
+import { LINKTREE_URL } from "@/lib/links";
 import { STREAM_ELEMENTS_DEFAULT, VENMO_DEFAULT, withHttps } from "@/lib/follow/payments";
 import type { SiteSettings } from "@/lib/follow/types";
 
@@ -8,6 +9,13 @@ type SupportSectionProps = {
 
 export default function SupportSection({ settings }: SupportSectionProps) {
   const links = [
+    {
+      key: "linktree",
+      label: "Linktree",
+      href: LINKTREE_URL,
+      icon: Link2,
+      hint: "Instagram and all the links",
+    },
     {
       key: "se",
       label: "StreamElements",
