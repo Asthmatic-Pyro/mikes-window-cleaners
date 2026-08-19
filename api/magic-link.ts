@@ -30,12 +30,15 @@ function escapeHtml(value: string) {
 
 export async function POST(request: Request) {
   const supabaseUrl = env("VITE_SUPABASE_URL") || env("SUPABASE_URL");
-  const serviceKey = env("SUPABASE_SERVICE_ROLE_KEY");
+  const serviceKey = env("SUPABASE_SERVICE_ROLE_KEY") || env("SERVICE_ROLE");
   const resendKey = env("RESEND_API_KEY");
   const from = env("EMAIL_FROM");
   const siteUrl = env("SITE_URL") || "https://mikeswindowcleaners.com";
 
-  if (!supabaseUrl || !serviceKey) {
+  if (!supabaseUrl) {
+    return Response.json({ error: "Magic link email is not configured (missing Supabase URL)." }, { status: 500 });
+  }
+  if (!serviceKey) {
     return Response.json(
       { error: "Magic link email is not configured (missing Supabase service role)." },
       { status: 500 },

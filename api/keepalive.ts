@@ -16,7 +16,7 @@ function env(name: string) {
 export async function GET() {
   const url = (env("VITE_SUPABASE_URL") || env("SUPABASE_URL")).replace(/\/$/, "");
   const anon = env("VITE_SUPABASE_ANON_KEY") || env("SUPABASE_ANON_KEY");
-  const serviceKey = env("SUPABASE_SERVICE_ROLE_KEY");
+  const serviceKey = env("SUPABASE_SERVICE_ROLE_KEY") || env("SERVICE_ROLE");
 
   if (!url || !anon) {
     return Response.json({ ok: false, error: "Supabase not configured" }, { status: 500 });
