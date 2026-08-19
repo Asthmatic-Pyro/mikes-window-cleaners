@@ -5,6 +5,7 @@ import WhySection from "@/components/WhySection";
 import ServicesSection from "@/components/ServicesSection";
 import ImageStrip from "@/components/ImageStrip";
 import AboutSection from "@/components/AboutSection";
+import FollowShoutSection from "@/components/FollowShoutSection";
 import QuoteSection from "@/components/QuoteSection";
 import Footer from "@/components/Footer";
 import SitePopups, { type PopupId } from "@/components/SitePopups";
@@ -25,6 +26,7 @@ export default function Index() {
         <ServicesSection onLearnMore={() => openPopup("services")} onGetQuote={openQuote} />
         <ImageStrip />
         <AboutSection onLearnMore={() => openPopup("about")} onGetQuote={openQuote} />
+        <FollowShoutSection />
         <QuoteSection />
       </main>
       <Footer onOpen={openPopup} onGetQuote={openQuote} />
