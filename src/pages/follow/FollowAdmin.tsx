@@ -108,12 +108,8 @@ export default function FollowAdmin() {
         lng: geo.lng,
       });
       setLocation(updated);
-      flash("Location updated.");
-      try {
-        await notifyFollowers("location", `${updated.updated_at}`, `Mike is now in ${updated.city_label}`);
-      } catch {
-        // Email is best-effort
-      }
+      flash("Saved. Public map updates in 24 hours.");
+      // Don't email followers until the pin goes public (keepalive promote).
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update location");
     }
@@ -246,7 +242,7 @@ export default function FollowAdmin() {
         {tab === "location" && (
           <form onSubmit={(e) => void onSaveLocation(e)} className="space-y-3 rounded-md border border-white/60 bg-white/55 p-4">
             <p className="text-sm text-muted-foreground">
-              City / area only — geocoded to a city center pin (never a street address).
+              City / area only — saved privately now, shown on the public map after 24 hours.
             </p>
             <label className="block space-y-1">
               <span className="text-sm font-medium">City or area</span>
@@ -264,7 +260,7 @@ export default function FollowAdmin() {
               </p>
             )}
             <button type="submit" className="btn-primary text-sm">
-              Update location
+              Save location (public in 24h)
             </button>
           </form>
         )}

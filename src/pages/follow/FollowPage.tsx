@@ -11,14 +11,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   getApprovedNames,
   getDestinations,
-  getLocation,
+  getPublicLocation,
   getPosts,
   getSettings,
   getWallPosts,
 } from "@/lib/follow/api";
 import type {
   Destination,
-  LocationCurrent,
+  LocationPublic,
   NameClaim,
   Post,
   SiteSettings,
@@ -27,7 +27,7 @@ import type {
 
 export default function FollowPage() {
   const { configured, user, updateProfile, profile } = useAuth();
-  const [location, setLocation] = useState<LocationCurrent | null>(null);
+  const [location, setLocation] = useState<LocationPublic | null>(null);
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [wall, setWall] = useState<WallPost[]>([]);
@@ -39,7 +39,7 @@ export default function FollowPage() {
   const refreshAll = useCallback(async () => {
     try {
       const [loc, dest, feed, wallPosts, approved, site] = await Promise.all([
-        getLocation(),
+        getPublicLocation(),
         getDestinations(),
         getPosts(),
         getWallPosts(),
@@ -118,7 +118,7 @@ export default function FollowPage() {
             <div className="overflow-hidden rounded-md border border-white/60 bg-white/50 shadow-sm">
               <div className="flex flex-wrap items-end justify-between gap-2 border-b border-white/60 px-4 py-3">
                 <div>
-                  <p className="text-sm text-muted-foreground">Currently in</p>
+                  <p className="text-sm text-muted-foreground">Currently in (shown with a 24-hour delay)</p>
                   <p className="font-display text-2xl font-bold md:text-3xl">{location.city_label}</p>
                 </div>
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">

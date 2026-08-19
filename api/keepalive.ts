@@ -1,25 +1,51 @@
 import process from "node:process";
+import { createClient } from "@supabase/supabase-js";
 
-/** Lightweight ping so free-tier Supabase projects stay active. */
+function env(name: string) {
+  const raw = process.env[name]?.trim() ?? "";
+  if (
+    (raw.startsWith('"') && raw.endsWith('"')) ||
+    (raw.startsWith("'") && raw.endsWith("'"))
+  ) {
+    return raw.slice(1, -1).trim();
+  }
+  return raw;
+}
+
+/** Keep free-tier Supabase awake + promote location to public after 24h delay. */
 export async function GET() {
-  const url = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "").replace(/\/$/, "");
-  const anon = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
+  const url = (env("VITE_SUPABASE_URL") || env("SUPABASE_URL")).replace(/\/$/, "");
+  const anon = env("VITE_SUPABASE_ANON_KEY") || env("SUPABASE_ANON_KEY");
+  const serviceKey = env("SUPABASE_SERVICE_ROLE_KEY");
 
   if (!url || !anon) {
     return Response.json({ ok: false, error: "Supabase not configured" }, { status: 500 });
   }
 
-  const res = await fetch(`${url}/rest/v1/location_current?select=id&limit=1`, {
+  const ping = await fetch(`${url}/rest/v1/location_public?select=id&limit=1`, {
     headers: {
       apikey: anon,
       Authorization: `Bearer ${anon}`,
     },
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    return Response.json({ ok: false, status: res.status, error: text.slice(0, 200) }, { status: 502 });
+  if (!ping.ok) {
+    const text = await ping.text();
+    return Response.json({ ok: false, status: ping.status, error: text.slice(0, 200) }, { status: 502 });
   }
 
-  return Response.json({ ok: true, at: new Date().toISOString() });
+  let promoted = false;
+  if (serviceKey) {
+    const admin = createClient(url, serviceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { data, error } = await admin.rpc("promote_public_location");
+    if (error) {
+      console.error("promote_public_location:", error.message);
+    } else {
+      promoted = Boolean(data);
+    }
+  }
+
+  return Response.json({ ok: true, at: new Date().toISOString(), promoted });
 }

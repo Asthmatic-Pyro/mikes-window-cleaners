@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import type {
   Destination,
   LocationCurrent,
+  LocationPublic,
   NameClaim,
   Post,
   Reaction,
@@ -11,6 +12,14 @@ import type {
   WallPost,
 } from "@/lib/follow/types";
 
+/** Public map pin — delayed 24h from admin updates. */
+export async function getPublicLocation(): Promise<LocationPublic | null> {
+  const { data, error } = await supabase.from("location_public").select("*").eq("id", 1).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+/** Admin live pin (not shown publicly until 24h delay). */
 export async function getLocation(): Promise<LocationCurrent | null> {
   const { data, error } = await supabase.from("location_current").select("*").eq("id", 1).maybeSingle();
   if (error) throw error;

@@ -1,10 +1,10 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { Destination, LocationCurrent } from "@/lib/follow/types";
+import type { Destination } from "@/lib/follow/types";
 
 type JourneyMapProps = {
-  location: LocationCurrent;
+  location: { city_label: string; lat: number; lng: number };
   destinations: Destination[];
   className?: string;
 };

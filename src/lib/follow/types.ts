@@ -23,6 +23,14 @@ export type LocationCurrent = {
   updated_at: string;
 };
 
+export type LocationPublic = {
+  id: number;
+  city_label: string;
+  lat: number;
+  lng: number;
+  published_at: string;
+};
+
 export type Destination = {
   id: string;
   name: string;
@@ -99,6 +107,12 @@ export type Database = {
         Row: LocationCurrent;
         Insert: Partial<LocationCurrent>;
         Update: Partial<LocationCurrent>;
+        Relationships: [];
+      };
+      location_public: {
+        Row: LocationPublic;
+        Insert: Partial<LocationPublic>;
+        Update: Partial<LocationPublic>;
         Relationships: [];
       };
       destinations: {
