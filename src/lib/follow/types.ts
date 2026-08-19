@@ -85,6 +85,7 @@ export type NameClaim = {
 
 export type SiteSettings = {
   id: number;
+  streamelements_url: string;
   buy_me_a_coffee_url: string;
   cash_app_url: string;
   cash_app_tag: string;

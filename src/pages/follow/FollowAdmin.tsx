@@ -473,6 +473,15 @@ export default function FollowAdmin() {
         {tab === "settings" && settings && (
           <form onSubmit={(e) => void onSaveSettings(e)} className="space-y-3 rounded-md border border-white/60 bg-white/55 p-4">
             <label className="block space-y-1">
+              <span className="text-sm font-medium">StreamElements tip URL</span>
+              <input
+                className="field-input"
+                value={settings.streamelements_url ?? ""}
+                onChange={(e) => setSettings({ ...settings, streamelements_url: e.target.value })}
+                placeholder="https://streamelements.com/AzmaticPyro/tip"
+              />
+            </label>
+            <label className="block space-y-1">
               <span className="text-sm font-medium">Buy Me a Coffee URL</span>
               <input
                 className="field-input"

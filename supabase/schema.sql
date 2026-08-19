@@ -92,6 +92,7 @@ create table if not exists public.name_claims (
 -- Site settings (support links + mailbox copy)
 create table if not exists public.site_settings (
   id int primary key default 1 check (id = 1),
+  streamelements_url text not null default '',
   buy_me_a_coffee_url text not null default '',
   cash_app_url text not null default '',
   cash_app_tag text not null default '',

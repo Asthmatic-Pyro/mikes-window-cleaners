@@ -1,4 +1,5 @@
-import { Coffee, Gift, Mail, Wallet } from "lucide-react";
+import { Coffee, CreditCard, Gift, Mail, Wallet } from "lucide-react";
+import { STREAM_ELEMENTS_DEFAULT, withHttps } from "@/lib/follow/payments";
 import type { SiteSettings } from "@/lib/follow/types";
 
 type SupportSectionProps = {
@@ -8,23 +9,30 @@ type SupportSectionProps = {
 export default function SupportSection({ settings }: SupportSectionProps) {
   const links = [
     {
+      key: "se",
+      label: "StreamElements",
+      href: withHttps(settings?.streamelements_url || STREAM_ELEMENTS_DEFAULT),
+      icon: CreditCard,
+      hint: "Card or PayPal tip",
+    },
+    {
       key: "bmc",
       label: "Buy Me a Coffee",
-      href: settings?.buy_me_a_coffee_url,
+      href: withHttps(settings?.buy_me_a_coffee_url ?? ""),
       icon: Coffee,
       hint: "Tip or support the trip",
     },
     {
       key: "cash",
       label: settings?.cash_app_tag ? `Cash App ${settings.cash_app_tag}` : "Cash App",
-      href: settings?.cash_app_url,
+      href: withHttps(settings?.cash_app_url ?? ""),
       icon: Wallet,
       hint: "Send a tip directly",
     },
     {
       key: "amazon",
       label: "Amazon wishlist",
-      href: settings?.amazon_wishlist_url,
+      href: withHttps(settings?.amazon_wishlist_url ?? ""),
       icon: Gift,
       hint: "Buy something from the list",
     },
@@ -39,16 +47,16 @@ export default function SupportSection({ settings }: SupportSectionProps) {
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {links.length === 0 && (
-          <p className="text-sm text-muted-foreground sm:col-span-3">Support links will appear here soon.</p>
+          <p className="text-sm text-muted-foreground sm:col-span-2">Support links will appear here soon.</p>
         )}
         {links.map((link) => {
           const Icon = link.icon;
           return (
             <a
               key={link.key}
-              href={link.href!}
+              href={link.href}
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-col gap-1 rounded-md border border-white/60 bg-white/55 px-3 py-3 transition-colors hover:border-primary/35"

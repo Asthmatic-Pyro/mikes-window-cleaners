@@ -150,7 +150,7 @@ export default function FollowPage() {
         {/* Secondary: light support + social */}
         <div className="space-y-10 border-t border-border/50 pt-10">
           <SupportSection settings={settings} />
-          <NameOnCar names={names} onSubmitted={() => void refreshAll()} />
+          <NameOnCar names={names} settings={settings} onSubmitted={() => void refreshAll()} />
           <CommunityWall posts={wall} onRefresh={() => void refreshAll()} />
 
           {user && profile && (
