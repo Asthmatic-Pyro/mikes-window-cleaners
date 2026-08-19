@@ -20,6 +20,7 @@ type AuthContextValue = {
   isAdmin: boolean;
   refreshProfile: () => Promise<void>;
   signInWithMagicLink: (email: string, displayName?: string, notifyOptIn?: boolean) => Promise<{ error: string | null }>;
+  signInWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   updateProfile: (patch: Partial<Pick<Profile, "display_name" | "notify_opt_in">>) => Promise<{ error: string | null }>;
 };
@@ -87,22 +88,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: "Follow is not configured yet. Add Supabase env vars." };
       }
 
-      const redirectTo = `${window.location.origin}/Follow/auth/callback`;
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: {
-          emailRedirectTo: redirectTo,
-          data: {
-            display_name: displayName?.trim() || undefined,
-            notify_opt_in: notifyOptIn ? "true" : "false",
-          },
-        },
-      });
-
-      return { error: error?.message ?? null };
+      try {
+        const res = await fetch("/api/magic-link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: email.trim(),
+            displayName: displayName?.trim() || undefined,
+            notifyOptIn: Boolean(notifyOptIn),
+          }),
+        });
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) {
+          return { error: body.error || "Could not send magic link." };
+        }
+        return { error: null };
+      } catch {
+        return { error: "Could not send magic link. Try again." };
+      }
     },
     [],
   );
+
+  const signInWithPassword = useCallback(async (email: string, password: string) => {
+    if (!isSupabaseConfigured) {
+      return { error: "Follow is not configured yet." };
+    }
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    return { error: error?.message ?? null };
+  }, []);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
@@ -129,10 +146,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAdmin: profile?.role === "admin",
       refreshProfile,
       signInWithMagicLink,
+      signInWithPassword,
       signOut,
       updateProfile,
     }),
-    [session, profile, loading, refreshProfile, signInWithMagicLink, signOut, updateProfile],
+    [session, profile, loading, refreshProfile, signInWithMagicLink, signInWithPassword, signOut, updateProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
