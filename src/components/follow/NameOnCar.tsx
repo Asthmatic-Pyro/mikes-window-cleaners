@@ -1,8 +1,9 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Coffee, CreditCard, ExternalLink, Send, Wallet } from "lucide-react";
+import { Check, Coffee, CreditCard, ExternalLink, Send, Trash2, Wallet } from "lucide-react";
+import Modal from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
-import { submitNameClaim } from "@/lib/follow/api";
+import { deleteNameClaim, getMyNameClaims, submitNameClaim } from "@/lib/follow/api";
 import {
   availablePayMethods,
   checkoutUrl,
@@ -31,9 +32,12 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
   const [amount, setAmount] = useState("10");
   const [method, setMethod] = useState<PayMethod>(methods[0] ?? "streamelements");
   const [error, setError] = useState<string | null>(null);
-  const [ok, setOk] = useState<string | null>(null);
   const [payHref, setPayHref] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [mine, setMine] = useState<NameClaim[]>([]);
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [successCopy, setSuccessCopy] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const windshield = names.filter((n) => n.tier === "windshield");
   const car = names.filter((n) => n.tier === "car");
@@ -41,6 +45,32 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
   const minAmount = tier === "windshield" ? 100 : 1;
   const validAmount = Number.isFinite(parsed) && parsed >= minAmount;
   const payUrl = validAmount ? checkoutUrl(method, settings, parsed, displayName.trim()) : "";
+
+  useEffect(() => {
+    if (!user) {
+      setMine([]);
+      return;
+    }
+    let cancelled = false;
+    void getMyNameClaims(user.id)
+      .then((rows) => {
+        if (!cancelled) setMine(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setMine([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const refreshMine = async () => {
+    if (!user) {
+      setMine([]);
+      return;
+    }
+    setMine(await getMyNameClaims(user.id));
+  };
 
   const selectTier = (next: NameTier) => {
     setTier(next);
@@ -57,6 +87,21 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
     if (!opened) setPayHref(url);
   };
 
+  const removeClaim = async (id: string) => {
+    if (!window.confirm("Remove this name request?")) return;
+    setDeletingId(id);
+    setError(null);
+    try {
+      await deleteNameClaim(id);
+      await refreshMine();
+      onSubmitted();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete that request.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validAmount) {
@@ -70,7 +115,6 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
     const name = displayName.trim();
     setBusy(true);
     setError(null);
-    setOk(null);
     setPayHref(null);
     try {
       if (user) {
@@ -81,17 +125,19 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
           payment_note: `${payMethodLabel(method)} · put “${name}” in the tip message`,
         });
         openCheckout(payUrl);
-        setOk(
-          `Claim saved. Finish ${formatUsd(parsed)} on ${payMethodLabel(method)} — put “${name}” in the tip message so Mike can match it.`,
+        setSuccessCopy(
+          `“${name}” is saved as a ${tier === "windshield" ? "windshield" : "car"} request. Finish ${formatUsd(parsed)} on ${payMethodLabel(method)} and put that name in the tip message so Mike can match it.`,
         );
         setDisplayName("");
+        await refreshMine();
         onSubmitted();
       } else {
         openCheckout(payUrl);
-        setOk(
-          `Finish ${formatUsd(parsed)} on ${payMethodLabel(method)}. Put “${name}” in the tip message, then sign in so we can claim the name.`,
+        setSuccessCopy(
+          `Finish ${formatUsd(parsed)} on ${payMethodLabel(method)} and put “${name}” in the tip message. Sign in afterward if you want the name saved on your account.`,
         );
       }
+      setSuccessOpen(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start checkout.");
     } finally {
@@ -282,17 +328,6 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
                 {busy ? "Opening checkout…" : validAmount ? `Pay ${formatUsd(parsed)}` : "Pay"}
               </button>
               {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-              {ok && <p className="mt-2 text-sm text-primary">{ok}</p>}
-              {payHref && (
-                <a
-                  href={payHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
-                >
-                  Open checkout <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-              )}
               {!user && (
                 <p className="mt-2 text-xs text-muted-foreground">
                   <Link to="/Follow/login" className="font-semibold text-primary hover:underline">
@@ -304,6 +339,62 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
             </div>
           </form>
       </div>
+
+      {user && mine.length > 0 && (
+        <div className="rounded-md border border-white/60 bg-white/55 px-4 py-4">
+          <h3 className="font-display text-lg font-bold">Your requests</h3>
+          <p className="mt-1 text-sm text-muted-foreground">Pending names wait for Mike. You can delete one anytime.</p>
+          <ul className="mt-3 space-y-2">
+            {mine.map((claim) => (
+              <li
+                key={claim.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-white/70 bg-white/80 px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <p className="font-semibold">
+                    {claim.display_name}{" "}
+                    <span className="text-sm font-medium text-muted-foreground">
+                      · {formatUsd(Number(claim.amount))} · {claim.tier === "windshield" ? "windshield" : "car"}
+                    </span>
+                  </p>
+                  <p className="text-xs capitalize text-muted-foreground">{claim.status}</p>
+                </div>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 rounded-md border border-border/80 bg-white px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:border-red-300 hover:text-red-600"
+                  disabled={deletingId === claim.id}
+                  onClick={() => void removeClaim(claim.id)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {deletingId === claim.id ? "Removing…" : "Delete"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <Modal open={successOpen} title="Request sent" onClose={() => setSuccessOpen(false)}>
+        <div className="flex gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-wash text-white">
+            <Check className="h-5 w-5" />
+          </span>
+          <p className="text-sm leading-relaxed text-foreground/90">{successCopy}</p>
+        </div>
+        {payHref && (
+          <a
+            href={payHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary mt-5 text-sm"
+          >
+            Open checkout <ExternalLink className="h-4 w-4" />
+          </a>
+        )}
+        <button type="button" className="btn-secondary mt-3 text-sm" onClick={() => setSuccessOpen(false)}>
+          Close
+        </button>
+      </Modal>
     </section>
   );
 }

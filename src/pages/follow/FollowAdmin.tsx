@@ -17,6 +17,7 @@ import {
   hideWallPost,
   notifyFollowers,
   reviewNameClaim,
+  deleteNameClaim,
   updateLocation,
   updatePost,
   updateSettings,
@@ -446,24 +447,36 @@ export default function FollowAdmin() {
                       {c.payment_note ? ` · ${c.payment_note}` : ""}
                     </p>
                   </div>
-                  {c.status === "pending" && (
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        className="btn-primary py-1.5 text-xs"
-                        onClick={() => void reviewNameClaim(c.id, "approved").then(load)}
-                      >
-                        Approve
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-secondary py-1.5 text-xs"
-                        onClick={() => void reviewNameClaim(c.id, "rejected").then(load)}
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex gap-2">
+                    {c.status === "pending" && (
+                      <>
+                        <button
+                          type="button"
+                          className="btn-primary py-1.5 text-xs"
+                          onClick={() => void reviewNameClaim(c.id, "approved").then(load)}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-secondary py-1.5 text-xs"
+                          onClick={() => void reviewNameClaim(c.id, "rejected").then(load)}
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      className="btn-secondary py-1.5 text-xs"
+                      onClick={() => {
+                        if (!window.confirm(`Delete the request for “${c.display_name}”?`)) return;
+                        void deleteNameClaim(c.id).then(load);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </li>
             ))}

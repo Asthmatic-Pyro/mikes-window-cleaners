@@ -250,6 +250,21 @@ export async function reviewNameClaim(id: string, status: "approved" | "rejected
   return data;
 }
 
+export async function getMyNameClaims(userId: string): Promise<NameClaim[]> {
+  const { data, error } = await supabase
+    .from("name_claims")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function deleteNameClaim(id: string) {
+  const { error } = await supabase.from("name_claims").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function getSettings(): Promise<SiteSettings | null> {
   const { data, error } = await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle();
   if (error) throw error;

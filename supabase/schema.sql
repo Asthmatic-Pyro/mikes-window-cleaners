@@ -327,6 +327,10 @@ create policy "Admins update claims"
   using (public.is_admin())
   with check (public.is_admin());
 
+create policy "Members or admins delete claims"
+  on public.name_claims for delete
+  using (auth.uid() = user_id or public.is_admin());
+
 -- Settings
 create policy "Settings are public"
   on public.site_settings for select using (true);
