@@ -1,1 +1,1 @@
-export const LINKTREE_URL = "https://tr.ee/YTC01-o_qb";
+export const LINKTREE_URL = "https://linktr.ee/michael.galioto";
