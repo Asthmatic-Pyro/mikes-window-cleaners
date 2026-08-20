@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-import { env } from "./_lib/env";
-import { alertMike } from "./_lib/telegram";
+import { env } from "./_lib/env.js";
+import { alertMike } from "./_lib/telegram.js";
 
 type Body = {
   email?: string;

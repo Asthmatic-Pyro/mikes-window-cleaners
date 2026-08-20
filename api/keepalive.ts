@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { env } from "./_lib/env";
-import { alertMike } from "./_lib/telegram";
+import { env } from "./_lib/env.js";
+import { alertMike } from "./_lib/telegram.js";
 
 /** Keep free-tier Supabase awake + promote location to public after 24h delay. */
 export async function GET() {

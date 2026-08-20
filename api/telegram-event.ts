@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { env } from "./_lib/env";
-import { alertMike, type SiteEventType } from "./_lib/telegram";
+import { env } from "./_lib/env.js";
+import { alertMike, type SiteEventType } from "./_lib/telegram.js";
 
 type Body = {
   eventType?: SiteEventType;

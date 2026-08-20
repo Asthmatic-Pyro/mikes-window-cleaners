@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-import { env } from "./_lib/env";
+import { env } from "./_lib/env.js";
 
 type Body = {
   eventType?: "post" | "location";

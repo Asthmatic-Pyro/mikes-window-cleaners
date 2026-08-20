@@ -1,6 +1,6 @@
 import { Resend } from "resend";
-import { env } from "./_lib/env";
-import { alertMike } from "./_lib/telegram";
+import { env } from "./_lib/env.js";
+import { alertMike } from "./_lib/telegram.js";
 
 const resend = new Resend(env("RESEND_API_KEY"));
 
