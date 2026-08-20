@@ -1,7 +1,8 @@
-import process from "node:process";
 import { Resend } from "resend";
+import { env } from "./_lib/env";
+import { alertMike } from "./_lib/telegram";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(env("RESEND_API_KEY"));
 
 type QuoteBody = {
   name?: string;
@@ -12,17 +13,6 @@ type QuoteBody = {
 };
 
 /** Strip wrapping quotes people often paste into Vercel env UI. */
-function env(name: string) {
-  const raw = process.env[name]?.trim() ?? "";
-  if (
-    (raw.startsWith('"') && raw.endsWith('"')) ||
-    (raw.startsWith("'") && raw.endsWith("'"))
-  ) {
-    return raw.slice(1, -1).trim();
-  }
-  return raw;
-}
-
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -91,6 +81,12 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+
+  void alertMike(
+    "quote",
+    `New quote from ${name}\nPhone: ${phone}\nEmail: ${email || "not provided"}\nService: ${service}${message ? `\n${message}` : ""}`,
+    { name, phone, email, service, message },
+  );
 
   return Response.json({ ok: true, id: data?.id });
 }

@@ -83,6 +83,14 @@ export type NameClaim = {
   profiles?: Pick<Profile, "display_name" | "email"> | null;
 };
 
+export type EventLog = {
+  id: string;
+  event_type: string;
+  summary: string;
+  payload: Record<string, unknown> | null;
+  created_at: string;
+};
+
 export type SiteSettings = {
   id: number;
   streamelements_url: string;

@@ -10,6 +10,7 @@ import {
   geocodeCity,
   getAllWallPostsAdmin,
   getDestinations,
+  getEventLogs,
   getLocation,
   getNameClaimsAdmin,
   getPosts,
@@ -32,9 +33,10 @@ import type {
   Post,
   SiteSettings,
   WallPost,
+  EventLog,
 } from "@/lib/follow/types";
 
-type Tab = "location" | "destinations" | "posts" | "wall" | "claims" | "settings";
+type Tab = "location" | "destinations" | "posts" | "wall" | "claims" | "settings" | "log";
 
 export default function FollowAdmin() {
   const { loading, isAdmin, configured, user } = useAuth();
@@ -49,6 +51,7 @@ export default function FollowAdmin() {
   const [wall, setWall] = useState<WallPost[]>([]);
   const [claims, setClaims] = useState<NameClaim[]>([]);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [eventLogs, setEventLogs] = useState<EventLog[]>([]);
 
   const [destName, setDestName] = useState("");
   const [destStatus, setDestStatus] = useState<DestinationStatus>("upcoming");
@@ -59,13 +62,14 @@ export default function FollowAdmin() {
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [loc, dest, feed, wallPosts, nameClaims, site] = await Promise.all([
+    const [loc, dest, feed, wallPosts, nameClaims, site, logs] = await Promise.all([
       getLocation(),
       getDestinations(),
       getPosts(),
       getAllWallPostsAdmin(),
       getNameClaimsAdmin(),
       getSettings(),
+      getEventLogs(),
     ]);
     setLocation(loc);
     setCityInput(loc?.city_label ?? "");
@@ -74,6 +78,7 @@ export default function FollowAdmin() {
     setWall(wallPosts);
     setClaims(nameClaims);
     setSettings(site);
+    setEventLogs(logs);
   }, []);
 
   useEffect(() => {
@@ -206,6 +211,7 @@ export default function FollowAdmin() {
     { id: "settings", label: "Support links" },
     { id: "claims", label: "Car names" },
     { id: "wall", label: "Guestbook" },
+    { id: "log", label: "Log" },
   ];
 
   return (
@@ -478,6 +484,23 @@ export default function FollowAdmin() {
                     </button>
                   </div>
                 </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {tab === "log" && (
+          <ul className="space-y-2">
+            {eventLogs.length === 0 && (
+              <li className="text-sm text-muted-foreground">No events logged yet.</li>
+            )}
+            {eventLogs.map((row) => (
+              <li key={row.id} className="rounded-md border border-white/60 bg-white/55 px-3 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">{row.event_type}</p>
+                <p className="mt-1 whitespace-pre-wrap text-sm">{row.summary}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {new Date(row.created_at).toLocaleString()}
+                </p>
               </li>
             ))}
           </ul>

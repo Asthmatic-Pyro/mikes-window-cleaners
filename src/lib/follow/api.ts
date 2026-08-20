@@ -9,6 +9,7 @@ import type {
   ReactionTarget,
   ReactionType,
   SiteSettings,
+  EventLog,
   WallPost,
 } from "@/lib/follow/types";
 
@@ -263,6 +264,16 @@ export async function getMyNameClaims(userId: string): Promise<NameClaim[]> {
 export async function deleteNameClaim(id: string) {
   const { error } = await supabase.from("name_claims").delete().eq("id", id);
   if (error) throw error;
+}
+
+export async function getEventLogs(): Promise<EventLog[]> {
+  const { data, error } = await supabase
+    .from("event_log")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(80);
+  if (error) throw error;
+  return (data as EventLog[]) ?? [];
 }
 
 export async function getSettings(): Promise<SiteSettings | null> {

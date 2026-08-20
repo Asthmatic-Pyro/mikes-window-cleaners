@@ -1,23 +1,12 @@
-import process from "node:process";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { env } from "./_lib/env";
 
 type Body = {
   eventType?: "post" | "location";
   eventKey?: string;
   summary?: string;
 };
-
-function env(name: string) {
-  const raw = process.env[name]?.trim() ?? "";
-  if (
-    (raw.startsWith('"') && raw.endsWith('"')) ||
-    (raw.startsWith("'") && raw.endsWith("'"))
-  ) {
-    return raw.slice(1, -1).trim();
-  }
-  return raw;
-}
 
 function escapeHtml(value: string) {
   return value

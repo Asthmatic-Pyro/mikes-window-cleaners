@@ -1,23 +1,13 @@
-import process from "node:process";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { env } from "./_lib/env";
+import { alertMike } from "./_lib/telegram";
 
 type Body = {
   email?: string;
   displayName?: string;
   notifyOptIn?: boolean;
 };
-
-function env(name: string) {
-  const raw = process.env[name]?.trim() ?? "";
-  if (
-    (raw.startsWith('"') && raw.endsWith('"')) ||
-    (raw.startsWith("'") && raw.endsWith("'"))
-  ) {
-    return raw.slice(1, -1).trim();
-  }
-  return raw;
-}
 
 function escapeHtml(value: string) {
   return value
@@ -107,6 +97,16 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+
+  const createdAt = data.user?.created_at ? new Date(data.user.created_at).getTime() : 0;
+  const isNew = createdAt > 0 && Date.now() - createdAt < 120_000;
+  void alertMike(
+    "signin",
+    isNew
+      ? `New user + sign-in link: ${email}${body.displayName?.trim() ? `\nName: ${body.displayName.trim()}` : ""}`
+      : `Sign-in link requested: ${email}`,
+    { email, displayName: body.displayName?.trim() || null, isNew },
+  );
 
   return Response.json({ ok: true });
 }

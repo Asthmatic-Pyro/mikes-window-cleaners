@@ -342,6 +342,123 @@ create policy "Admins manage settings"
 
 -- Notification log: service role only (no public policies)
 
+-- Event log + Telegram alerts
+create table if not exists public.event_log (
+  id uuid primary key default gen_random_uuid(),
+  event_type text not null,
+  summary text not null,
+  payload jsonb,
+  created_at timestamptz not null default now()
+);
+
+alter table public.event_log enable row level security;
+
+create policy "Admins read event log"
+  on public.event_log for select
+  using (public.is_admin());
+
+create extension if not exists pg_net;
+
+create schema if not exists private;
+revoke all on schema private from public;
+revoke all on schema private from anon, authenticated;
+
+create table if not exists private.site_secrets (
+  key text primary key,
+  value text not null
+);
+
+insert into private.site_secrets (key, value)
+values
+  ('telegram_webhook_url', 'https://mikeswindowcleaners.com/api/telegram-event'),
+  ('telegram_webhook_secret', 'mwc_tg_wh_k9Qm2Px7Ln4Rv8Wb3Hy')
+on conflict (key) do update set value = excluded.value;
+
+create or replace function public.queue_site_alert()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  event_type text;
+  summary text;
+  payload jsonb := '{}'::jsonb;
+  hook_url text;
+  hook_secret text;
+begin
+  if TG_TABLE_NAME = 'profiles' and TG_OP = 'INSERT' then
+    event_type := 'user';
+    summary := format('New user: %s (%s)', coalesce(NEW.display_name, 'unnamed'), coalesce(NEW.email, NEW.id::text));
+    payload := jsonb_build_object('id', NEW.id, 'email', NEW.email, 'display_name', NEW.display_name);
+  elsif TG_TABLE_NAME = 'name_claims' and TG_OP = 'INSERT' then
+    event_type := 'name';
+    summary := format('Name request: "%s" · $%s · %s', NEW.display_name, NEW.amount::text, NEW.tier);
+    payload := jsonb_build_object('id', NEW.id, 'display_name', NEW.display_name, 'amount', NEW.amount, 'tier', NEW.tier);
+  elsif TG_TABLE_NAME = 'wall_posts' and TG_OP = 'INSERT' then
+    event_type := 'wall';
+    summary := format('Guestbook: %s', left(NEW.body, 200));
+    payload := jsonb_build_object('id', NEW.id, 'author_id', NEW.author_id, 'body', NEW.body);
+  elsif TG_TABLE_NAME = 'posts' and TG_OP = 'INSERT' then
+    event_type := 'post';
+    summary := format('Road note: %s', NEW.title);
+    payload := jsonb_build_object('id', NEW.id, 'title', NEW.title);
+  elsif TG_TABLE_NAME = 'location_current' and TG_OP = 'UPDATE' then
+    if NEW.city_label is not distinct from OLD.city_label
+       and NEW.lat is not distinct from OLD.lat
+       and NEW.lng is not distinct from OLD.lng then
+      return NEW;
+    end if;
+    event_type := 'location';
+    summary := format('Location saved: %s', NEW.city_label);
+    payload := jsonb_build_object('city_label', NEW.city_label, 'lat', NEW.lat, 'lng', NEW.lng);
+  else
+    return coalesce(NEW, OLD);
+  end if;
+
+  select value into hook_url from private.site_secrets where key = 'telegram_webhook_url';
+  select value into hook_secret from private.site_secrets where key = 'telegram_webhook_secret';
+  if hook_url is null or hook_secret is null then
+    return NEW;
+  end if;
+
+  perform net.http_post(
+    url := hook_url,
+    body := jsonb_build_object('eventType', event_type, 'summary', summary, 'payload', payload),
+    headers := jsonb_build_object('Content-Type', 'application/json', 'x-telegram-secret', hook_secret)
+  );
+  return NEW;
+exception when others then
+  raise warning 'queue_site_alert: %', SQLERRM;
+  return coalesce(NEW, OLD);
+end;
+$$;
+
+drop trigger if exists profiles_site_alert on public.profiles;
+create trigger profiles_site_alert
+  after insert on public.profiles
+  for each row execute function public.queue_site_alert();
+
+drop trigger if exists name_claims_site_alert on public.name_claims;
+create trigger name_claims_site_alert
+  after insert on public.name_claims
+  for each row execute function public.queue_site_alert();
+
+drop trigger if exists wall_posts_site_alert on public.wall_posts;
+create trigger wall_posts_site_alert
+  after insert on public.wall_posts
+  for each row execute function public.queue_site_alert();
+
+drop trigger if exists posts_site_alert on public.posts;
+create trigger posts_site_alert
+  after insert on public.posts
+  for each row execute function public.queue_site_alert();
+
+drop trigger if exists location_current_site_alert on public.location_current;
+create trigger location_current_site_alert
+  after update on public.location_current
+  for each row execute function public.queue_site_alert();
+
 -- Storage bucket (run in dashboard or via API): post-images, public read
 insert into storage.buckets (id, name, public)
 values ('post-images', 'post-images', true)

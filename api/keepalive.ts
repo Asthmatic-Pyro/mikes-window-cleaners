@@ -1,16 +1,6 @@
-import process from "node:process";
 import { createClient } from "@supabase/supabase-js";
-
-function env(name: string) {
-  const raw = process.env[name]?.trim() ?? "";
-  if (
-    (raw.startsWith('"') && raw.endsWith('"')) ||
-    (raw.startsWith("'") && raw.endsWith("'"))
-  ) {
-    return raw.slice(1, -1).trim();
-  }
-  return raw;
-}
+import { env } from "./_lib/env";
+import { alertMike } from "./_lib/telegram";
 
 /** Keep free-tier Supabase awake + promote location to public after 24h delay. */
 export async function GET() {
@@ -44,6 +34,9 @@ export async function GET() {
       console.error("promote_public_location:", error.message);
     } else {
       promoted = Boolean(data);
+      if (promoted) {
+        void alertMike("location", "Public map pin promoted (24-hour delay elapsed).");
+      }
     }
   }
 
