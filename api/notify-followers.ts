@@ -119,15 +119,21 @@ export async function POST(request: Request) {
     <p><a href="${escapeHtml(siteUrl)}/Follow">Open /Follow</a></p>
   `;
 
-  // One recipient per message so emails stay private
+  // One recipient per message so emails stay private. Send in parallel so this
+  // stays under the Vercel Hobby time limit.
+  const results = await Promise.all(
+    emails.map((email) =>
+      resend.emails.send({
+        from,
+        to: [email],
+        subject,
+        html,
+      }),
+    ),
+  );
+
   let sent = 0;
-  for (const email of emails) {
-    const { error } = await resend.emails.send({
-      from,
-      to: [email],
-      subject,
-      html,
-    });
+  for (const { error } of results) {
     if (error) {
       console.error("Resend notify error:", error);
       return Response.json(

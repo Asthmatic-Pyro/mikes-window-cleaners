@@ -19,10 +19,10 @@ import {
   notifyFollowers,
   reviewNameClaim,
   deleteNameClaim,
+  describeFollowError,
   updateLocation,
   updatePost,
   updateSettings,
-  uploadPostImage,
   upsertDestination,
 } from "@/lib/follow/api";
 import type {
@@ -60,9 +60,10 @@ export default function FollowAdmin() {
   const [postBody, setPostBody] = useState("");
   const [postFile, setPostFile] = useState<File | null>(null);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const [savingPost, setSavingPost] = useState(false);
 
   const load = useCallback(async () => {
-    const [loc, dest, feed, wallPosts, nameClaims, site, logs] = await Promise.all([
+    const settled = await Promise.allSettled([
       getLocation(),
       getDestinations(),
       getPosts(),
@@ -71,19 +72,26 @@ export default function FollowAdmin() {
       getSettings(),
       getEventLogs(),
     ]);
-    setLocation(loc);
-    setCityInput(loc?.city_label ?? "");
-    setDestinations(dest);
-    setPosts(feed);
-    setWall(wallPosts);
-    setClaims(nameClaims);
-    setSettings(site);
-    setEventLogs(logs);
+    const value = <T,>(index: number, fallback: T): T => {
+      const item = settled[index];
+      return item.status === "fulfilled" ? (item.value as T) : fallback;
+    };
+    const locResult = settled[0];
+    if (locResult.status === "fulfilled") {
+      setLocation(locResult.value);
+      setCityInput(locResult.value?.city_label ?? "");
+    }
+    setDestinations((prev) => value(1, prev));
+    setPosts((prev) => value(2, prev));
+    setWall((prev) => value(3, prev));
+    setClaims((prev) => value(4, prev));
+    setSettings((prev) => value(5, prev));
+    setEventLogs((prev) => value(6, prev));
   }, []);
 
   useEffect(() => {
     if (!isAdmin) return;
-    void load().catch((err) => setError(err instanceof Error ? err.message : "Failed to load admin data"));
+    void load().catch((err) => setError(describeFollowError(err, "Failed to load admin data")));
   }, [isAdmin, load]);
 
   if (loading) {
@@ -117,7 +125,7 @@ export default function FollowAdmin() {
       flash("Saved. Public map updates in 24 hours.");
       // Don't email followers until the pin goes public (keepalive promote).
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update location");
+      setError(describeFollowError(err, "Failed to update location"));
     }
   };
 
@@ -138,7 +146,7 @@ export default function FollowAdmin() {
       await load();
       flash(geo ? "Stop added to the map." : "Stop saved (couldn’t pin on map — try a clearer city name).");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save destination");
+      setError(describeFollowError(err, "Failed to save destination"));
     }
   };
 
@@ -147,48 +155,49 @@ export default function FollowAdmin() {
       await upsertDestination({ ...d, status });
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update destination");
+      setError(describeFollowError(err, "Failed to update destination"));
     }
   };
 
   const onSavePost = async (e: FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || savingPost) return;
+    setSavingPost(true);
+    setError(null);
     try {
-      let image_url: string | null | undefined;
-      if (postFile) {
-        image_url = await uploadPostImage(postFile, user.id);
-      }
-
       if (editingPostId) {
         await updatePost(editingPostId, {
           title: postTitle.trim(),
           body: postBody.trim(),
-          ...(image_url ? { image_url } : {}),
+          image: postFile,
         });
         flash("Post updated.");
       } else {
         const created = await createPost({
           title: postTitle.trim(),
           body: postBody.trim(),
-          image_url: image_url ?? null,
+          image: postFile,
           author_id: user.id,
         });
         flash("Post published.");
-        try {
-          await notifyFollowers("post", created.id, created.title);
-        } catch {
+        void notifyFollowers("post", created.id, created.title).catch(() => {
           // best-effort
-        }
+        });
       }
 
       setPostTitle("");
       setPostBody("");
       setPostFile(null);
       setEditingPostId(null);
-      await load();
+      try {
+        await load();
+      } catch {
+        // Publish already succeeded; list refresh is best-effort.
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save post");
+      setError(describeFollowError(err, "Failed to save post. Check your connection and try again."));
+    } finally {
+      setSavingPost(false);
     }
   };
 
@@ -200,7 +209,7 @@ export default function FollowAdmin() {
       setSettings(next);
       flash("Support settings saved.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save settings");
+      setError(describeFollowError(err, "Failed to save settings"));
     }
   };
 
@@ -349,14 +358,20 @@ export default function FollowAdmin() {
                 onChange={(e) => setPostBody(e.target.value)}
                 required
               />
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setPostFile(e.target.files?.[0] ?? null)}
-              />
+              <label className="block space-y-1">
+                <span className="text-sm font-medium">Photo (optional)</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/*"
+                  onChange={(e) => setPostFile(e.target.files?.[0] ?? null)}
+                />
+                <span className="block text-xs text-muted-foreground">
+                  Phone photos are shrunk automatically. JPEG or PNG works best.
+                </span>
+              </label>
               <div className="flex flex-wrap gap-2">
-                <button type="submit" className="btn-primary text-sm">
-                  {editingPostId ? "Save changes" : "Publish"}
+                <button type="submit" className="btn-primary text-sm" disabled={savingPost}>
+                  {savingPost ? "Saving…" : editingPostId ? "Save changes" : "Publish"}
                 </button>
                 {editingPostId && (
                   <button

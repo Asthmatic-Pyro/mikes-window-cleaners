@@ -72,30 +72,82 @@ export async function getPosts(): Promise<Post[]> {
   return data ?? [];
 }
 
+function isNetworkError(err: unknown) {
+  const message = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  return (
+    message.includes("failed to fetch") ||
+    message.includes("load failed") ||
+    message.includes("networkerror")
+  );
+}
+
+export function describeFollowError(err: unknown, fallback: string) {
+  if (isNetworkError(err)) return fallback;
+  return err instanceof Error && err.message ? err.message : fallback;
+}
+
+async function adminSessionToken() {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Not signed in.");
+  return token;
+}
+
+async function savePostViaApi(payload: {
+  id?: string;
+  title: string;
+  body: string;
+  image?: File | null;
+}) {
+  const token = await adminSessionToken();
+  const form = new FormData();
+  form.append("title", payload.title);
+  form.append("body", payload.body);
+  if (payload.id) form.append("id", payload.id);
+  if (payload.image) form.append("image", payload.image);
+
+  let res: Response;
+  try {
+    res = await fetch("/api/admin-post", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+  } catch (err) {
+    throw new Error(describeFollowError(err, "Could not reach the server to save the post. Try again."));
+  }
+
+  const body = (await res.json().catch(() => ({}))) as Post & { error?: string };
+  if (!res.ok) {
+    throw new Error(body.error || "Failed to save post.");
+  }
+  return body;
+}
+
 export async function createPost(input: {
   title: string;
   body: string;
-  image_url?: string | null;
+  image?: File | null;
   author_id: string;
 }) {
-  const { data, error } = await supabase
-    .from("posts")
-    .insert({
-      title: input.title,
-      body: input.body,
-      image_url: input.image_url ?? null,
-      author_id: input.author_id,
-    })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  void input.author_id;
+  return savePostViaApi({
+    title: input.title,
+    body: input.body,
+    image: input.image ? await preparePostImage(input.image) : null,
+  });
 }
 
-export async function updatePost(id: string, patch: Partial<Pick<Post, "title" | "body" | "image_url">>) {
-  const { data, error } = await supabase.from("posts").update(patch).eq("id", id).select().single();
-  if (error) throw error;
-  return data;
+export async function updatePost(
+  id: string,
+  patch: { title: string; body: string; image?: File | null },
+) {
+  return savePostViaApi({
+    id,
+    title: patch.title,
+    body: patch.body,
+    image: patch.image ? await preparePostImage(patch.image) : null,
+  });
 }
 
 export async function deletePost(id: string) {
@@ -103,16 +155,86 @@ export async function deletePost(id: string) {
   if (error) throw error;
 }
 
-export async function uploadPostImage(file: File, userId: string) {
-  const ext = file.name.split(".").pop() || "jpg";
-  const path = `${userId}/${Date.now()}.${ext}`;
-  const { error } = await supabase.storage.from("post-images").upload(path, file, {
-    cacheControl: "3600",
-    upsert: false,
-  });
-  if (error) throw error;
-  const { data } = supabase.storage.from("post-images").getPublicUrl(path);
-  return data.publicUrl;
+const MAX_UPLOAD_BYTES = 3.5 * 1024 * 1024;
+
+function jpegFileName(name: string) {
+  return `${name.replace(/\.[^.]+$/, "") || "photo"}.jpg`;
+}
+
+async function canvasToJpeg(source: CanvasImageSource, width: number, height: number, quality: number) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.drawImage(source, 0, 0, width, height);
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+  return blob;
+}
+
+function scaledSize(width: number, height: number, maxEdge: number) {
+  if (width <= maxEdge && height <= maxEdge) return { width, height };
+  const scale = Math.min(maxEdge / width, maxEdge / height);
+  return { width: Math.round(width * scale), height: Math.round(height * scale) };
+}
+
+async function compressWithBitmap(file: File, maxEdge: number, quality: number) {
+  const bitmap = await createImageBitmap(file);
+  try {
+    const { width, height } = scaledSize(bitmap.width, bitmap.height, maxEdge);
+    return await canvasToJpeg(bitmap, width, height, quality);
+  } finally {
+    bitmap.close();
+  }
+}
+
+async function compressWithImageElement(file: File, maxEdge: number, quality: number) {
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("decode"));
+      img.src = objectUrl;
+    });
+    const { width, height } = scaledSize(image.naturalWidth || image.width, image.naturalHeight || image.height, maxEdge);
+    return await canvasToJpeg(image, width, height, quality);
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+async function preparePostImage(file: File): Promise<File> {
+  if (file.size > 25 * 1024 * 1024) {
+    throw new Error("That photo is too large. Please use one under 25 MB.");
+  }
+
+  const attempts = [
+    { max: 1920, quality: 0.82 },
+    { max: 1600, quality: 0.74 },
+    { max: 1280, quality: 0.68 },
+    { max: 1024, quality: 0.6 },
+  ];
+
+  let last: File | null = null;
+  for (const { max, quality } of attempts) {
+    let blob: Blob | null = null;
+    try {
+      blob = await compressWithBitmap(file, max, quality);
+    } catch {
+      try {
+        blob = await compressWithImageElement(file, max, quality);
+      } catch {
+        blob = null;
+      }
+    }
+    if (!blob) continue;
+    last = new File([blob], jpegFileName(file.name), { type: "image/jpeg" });
+    if (last.size <= MAX_UPLOAD_BYTES) return last;
+  }
+
+  if (last && last.size <= 4.2 * 1024 * 1024) return last;
+  throw new Error("Couldn’t shrink that photo enough. Try a JPEG or PNG.");
 }
 
 export async function getWallPosts(): Promise<WallPost[]> {
@@ -299,14 +421,19 @@ export async function notifyFollowers(eventType: "post" | "location", eventKey: 
   const token = sessionData.session?.access_token;
   if (!token) throw new Error("Not signed in.");
 
-  const res = await fetch("/api/notify-followers", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ eventType, eventKey, summary }),
-  });
+  let res: Response;
+  try {
+    res = await fetch("/api/notify-followers", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ eventType, eventKey, summary }),
+    });
+  } catch (err) {
+    throw new Error(describeFollowError(err, "Could not notify followers."));
+  }
 
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string };
@@ -320,20 +447,37 @@ export async function notifyFollowers(eventType: "post" | "location", eventKey: 
 export async function geocodeCity(query: string): Promise<{ lat: number; lng: number; label: string } | null> {
   const q = query.trim();
   if (!q) return null;
-  const url = new URL("https://nominatim.openstreetmap.org/search");
-  url.searchParams.set("q", q);
-  url.searchParams.set("format", "json");
-  url.searchParams.set("limit", "1");
-  const res = await fetch(url.toString(), {
-    headers: { Accept: "application/json" },
-  });
-  if (!res.ok) return null;
-  const rows = (await res.json()) as Array<{ lat: string; lon: string; display_name: string }>;
-  const hit = rows[0];
-  if (!hit) return null;
-  return {
-    lat: Number(hit.lat),
-    lng: Number(hit.lon),
-    label: hit.display_name.split(",").slice(0, 2).join(",").trim() || q,
-  };
+  try {
+    const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
+    if (res.ok) {
+      const body = (await res.json().catch(() => ({}))) as {
+        result?: { lat: number; lng: number; label: string } | null;
+      };
+      if (body.result) return body.result;
+      if (body.result === null) return null;
+    }
+  } catch {
+    // Fall through to a direct lookup if the API route isn't deployed yet.
+  }
+
+  try {
+    const url = new URL("https://nominatim.openstreetmap.org/search");
+    url.searchParams.set("q", q);
+    url.searchParams.set("format", "json");
+    url.searchParams.set("limit", "1");
+    const res = await fetch(url.toString(), {
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as Array<{ lat: string; lon: string; display_name: string }>;
+    const hit = rows[0];
+    if (!hit) return null;
+    return {
+      lat: Number(hit.lat),
+      lng: Number(hit.lon),
+      label: hit.display_name.split(",").slice(0, 2).join(",").trim() || q,
+    };
+  } catch (err) {
+    throw new Error(describeFollowError(err, "Could not look up that city. Try again in a moment."));
+  }
 }
