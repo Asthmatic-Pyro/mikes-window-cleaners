@@ -472,6 +472,11 @@ export async function reviewTestimonial(id: string, status: Extract<TestimonialS
   return data as Testimonial;
 }
 
+export async function deleteTestimonial(id: string) {
+  const { error } = await supabase.from("testimonials").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function notifyFollowers(eventType: "post" | "location", eventKey: string, summary: string) {
   const { data: sessionData } = await supabase.auth.getSession();
   const token = sessionData.session?.access_token;

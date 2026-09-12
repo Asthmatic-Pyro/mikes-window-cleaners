@@ -21,6 +21,7 @@ import {
   publishPublicLocation,
   reviewNameClaim,
   reviewTestimonial,
+  deleteTestimonial,
   deleteNameClaim,
   describeFollowError,
   updateLocation,
@@ -496,24 +497,40 @@ export default function FollowAdmin() {
                     {row.display_name}
                     {row.city ? ` · ${row.city}` : ""}
                   </p>
-                  {row.status === "pending_hitl" && (
-                    <div className="mt-2 flex gap-2">
-                      <button
-                        type="button"
-                        className="btn-primary py-1.5 text-xs"
-                        onClick={() => void reviewTestimonial(row.id, "published").then(load)}
-                      >
-                        Approve
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-secondary py-1.5 text-xs"
-                        onClick={() => void reviewTestimonial(row.id, "rejected").then(load)}
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  )}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {row.status === "pending_hitl" && (
+                      <>
+                        <button
+                          type="button"
+                          className="btn-primary py-1.5 text-xs"
+                          onClick={() => void reviewTestimonial(row.id, "published").then(load)}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-secondary py-1.5 text-xs"
+                          onClick={() => void reviewTestimonial(row.id, "rejected").then(load)}
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      className="btn-secondary py-1.5 text-xs"
+                      onClick={() =>
+                        void deleteTestimonial(row.id)
+                          .then(() => {
+                            flash("Review deleted.");
+                            return load();
+                          })
+                          .catch((err) => setError(describeFollowError(err, "Failed to delete review")))
+                      }
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </li>
               );
             })}
