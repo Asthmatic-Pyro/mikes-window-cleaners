@@ -1,0 +1,23 @@
+---
+description: One agent owns Website and Field. Locked Mike-revamped product decisions.
+alwaysApply: true
+---
+
+# One agent, two remotes
+
+This agent owns **both** products. Do not ask the user to paste plans into another AI.
+
+- **Website** — Vite / Supabase / Vercel app in this folder (`mikes-window-cleaners`).
+- **Field** — FastAPI PWA under `/field` in the sibling `Window Washing Lead Magnet` folder (`mwc-crm`).
+
+Commit only in the repo that owns the changed file. Never mix remotes in one commit.
+
+## Locked (do not reopen)
+
+- Branch `mike-revamped` only (no GitHub fork).
+- No Field GPS ingest onto the public Follow map.
+- Follow map updates immediately on manual **Where I am**; matching route stop becomes `current`.
+- Swipe: expand to top, then swipe-down close (no peek chip).
+- Pins: `BEEN_HERE` (not job pins).
+- Groq Llama fail-closed (no fake draft if `GROQ_API_KEY` is missing).
+- Do not merge to `master` unless Mike asks.
