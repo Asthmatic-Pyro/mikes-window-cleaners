@@ -1,6 +1,7 @@
 import { env } from "./_lib/env.js";
 
-const MODELS = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
+// Groq shut down developer-tier llama-3.3-70b-versatile / llama-3.1-8b-instant on 2026-08-16.
+const MODELS = ["openai/gpt-oss-120b", "openai/gpt-oss-20b"];
 
 type Answers = {
   cleaned?: string;
