@@ -29,3 +29,6 @@ dist-ssr
 !.env.example
 
 .env*
+
+# Local Cursor MCP (OAuth / project URL). Never commit.
+.cursor/mcp.json
