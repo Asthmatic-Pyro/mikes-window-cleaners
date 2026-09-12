@@ -28,6 +28,19 @@ insert into public.location_current (id, city_label, lat, lng)
 values (1, 'Cincinnati, OH', 39.1031, -84.5120)
 on conflict (id) do nothing;
 
+-- Public pin (immediate on admin save). Extra Follow schema: supabase/mike-revamped.sql
+create table if not exists public.location_public (
+  id int primary key default 1 check (id = 1),
+  city_label text not null default 'On the road',
+  lat double precision not null default 39.1031,
+  lng double precision not null default -84.5120,
+  published_at timestamptz not null default now()
+);
+
+insert into public.location_public (id, city_label, lat, lng)
+select 1, city_label, lat, lng from public.location_current where id = 1
+on conflict (id) do nothing;
+
 -- Destinations
 create table if not exists public.destinations (
   id uuid primary key default gen_random_uuid(),
@@ -255,6 +268,16 @@ create policy "Location is public"
 
 create policy "Admins manage location"
   on public.location_current for all
+  using (public.is_admin())
+  with check (public.is_admin());
+
+alter table public.location_public enable row level security;
+
+create policy "Public location is readable"
+  on public.location_public for select using (true);
+
+create policy "Admins manage public location"
+  on public.location_public for all
   using (public.is_admin())
   with check (public.is_admin());
 

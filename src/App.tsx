@@ -3,6 +3,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { WeatherProvider } from "@/contexts/WeatherContext";
 import WeatherEffects from "@/components/follow/WeatherEffects";
 import Index from "@/pages/Index";
+import ReviewsPage from "@/pages/Reviews";
 import FollowPage from "@/pages/follow/FollowPage";
 import FollowLogin from "@/pages/follow/FollowLogin";
 import FollowAdmin from "@/pages/follow/FollowAdmin";
@@ -17,6 +18,8 @@ export default function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/reviews" element={<ReviewsPage />} />
+              <Route path="/Reviews" element={<ReviewsPage />} />
               <Route path="/Follow" element={<FollowPage />} />
               <Route path="/follow" element={<FollowPage />} />
               <Route path="/Follow/login" element={<FollowLogin />} />

@@ -26,6 +26,8 @@ type JourneyMapProps = {
   destinations: Destination[];
   weather?: LiveWeather | null;
   className?: string;
+  radar?: boolean;
+  onSelectDestination?: (destination: Destination) => void;
 };
 
 function statusColor(status: Destination["status"] | "here") {
@@ -56,11 +58,18 @@ function makeIcon(status: Destination["status"] | "here", large = false) {
   });
 }
 
-export default function JourneyMap({ location, destinations, weather, className }: JourneyMapProps) {
+export default function JourneyMap({
+  location,
+  destinations,
+  weather,
+  className,
+  radar = true,
+  onSelectDestination,
+}: JourneyMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
-  const [radarOn, setRadarOn] = useState(true);
+  const [radarOn, setRadarOn] = useState(radar);
   const [radarTime, setRadarTime] = useState<string | null>(null);
 
   useEffect(() => {
@@ -123,6 +132,7 @@ export default function JourneyMap({ location, destinations, weather, className 
             d.city_label ? "<br/>" : ""
           }${d.status === "done" ? "Visited" : d.status === "current" ? "Current stop" : "Upcoming"}`,
         )
+        .on("click", () => onSelectDestination?.(d))
         .addTo(layer);
     }
 
@@ -149,7 +159,7 @@ export default function JourneyMap({ location, destinations, weather, className 
     } else {
       map.fitBounds(L.latLngBounds(points), { padding: [28, 28], maxZoom: 5, animate: true });
     }
-  }, [location, destinations, weather]);
+  }, [location, destinations, weather, onSelectDestination]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -286,6 +296,7 @@ export default function JourneyMap({ location, destinations, weather, className 
     <div className={`relative ${className ?? ""}`}>
       <div ref={containerRef} className="h-full min-h-[280px] w-full" />
       {weather && <WeatherBadge weather={weather} />}
+      {radar && (
       <div className="absolute bottom-3 left-3 z-[500] flex flex-col items-start gap-2">
         {radarOn && (
           <div className="rounded-md border border-white/70 bg-white/90 px-2.5 py-1.5 shadow-sm backdrop-blur-md">
@@ -317,6 +328,7 @@ export default function JourneyMap({ location, destinations, weather, className 
           Radar {radarOn ? "on" : "off"}
         </button>
       </div>
+      )}
     </div>
   );
 }

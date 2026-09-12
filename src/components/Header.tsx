@@ -56,6 +56,12 @@ export default function Header({ onGetQuote, onOpen }: HeaderProps) {
           >
             Follow
           </Link>
+          <Link
+            to="/reviews"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            Review me
+          </Link>
           <a
             href="tel:+15136284128"
             className="text-sm font-semibold text-primary transition-colors hover:underline"
@@ -109,6 +115,13 @@ export default function Header({ onGetQuote, onOpen }: HeaderProps) {
               onClick={() => setOpen(false)}
             >
               Follow
+            </Link>
+            <Link
+              to="/reviews"
+              className="rounded-md px-3 py-2.5 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
+              onClick={() => setOpen(false)}
+            >
+              Review me
             </Link>
           </nav>
         </div>

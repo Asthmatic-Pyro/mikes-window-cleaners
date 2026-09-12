@@ -1,9 +1,10 @@
 export type UserRole = "member" | "admin";
 export type DestinationStatus = "upcoming" | "current" | "done";
-export type ReactionType = "like" | "cheer";
+export type ReactionType = "like" | "cheer" | "fire" | "laugh" | "sad" | "wave";
 export type ReactionTarget = "post" | "wall";
 export type NameTier = "car" | "windshield";
 export type ClaimStatus = "pending" | "approved" | "rejected";
+export type TestimonialStatus = "draft" | "pending_hitl" | "published" | "rejected";
 
 export type Profile = {
   id: string;
@@ -57,6 +58,8 @@ export type WallPost = {
   author_id: string;
   body: string;
   hidden: boolean;
+  parent_id?: string | null;
+  thread_root_id?: string | null;
   created_at: string;
   profiles?: Pick<Profile, "display_name"> | null;
 };
@@ -105,6 +108,19 @@ export type SiteSettings = {
   updated_at: string;
 };
 
+export type Testimonial = {
+  id: string;
+  display_name: string;
+  city: string | null;
+  answers: Record<string, string>;
+  draft_text: string;
+  final_text: string;
+  status: TestimonialStatus;
+  consent_at: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -144,10 +160,12 @@ export type Database = {
       };
       wall_posts: {
         Row: WallPost;
-        Insert: Omit<WallPost, "id" | "created_at" | "hidden" | "profiles"> & {
+        Insert: Omit<WallPost, "id" | "created_at" | "hidden" | "profiles" | "parent_id" | "thread_root_id"> & {
           id?: string;
           created_at?: string;
           hidden?: boolean;
+          parent_id?: string | null;
+          thread_root_id?: string | null;
         };
         Update: Partial<WallPost>;
         Relationships: [];
@@ -167,6 +185,16 @@ export type Database = {
           status?: ClaimStatus;
         };
         Update: Partial<NameClaim>;
+        Relationships: [];
+      };
+      testimonials: {
+        Row: Testimonial;
+        Insert: Omit<Testimonial, "id" | "created_at" | "reviewed_at"> & {
+          id?: string;
+          created_at?: string;
+          reviewed_at?: string | null;
+        };
+        Update: Partial<Testimonial>;
         Relationships: [];
       };
       site_settings: {
@@ -199,6 +227,7 @@ export type Database = {
     Views: Record<string, never>;
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean };
+      promote_public_location_now: { Args: Record<string, never>; Returns: LocationPublic };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

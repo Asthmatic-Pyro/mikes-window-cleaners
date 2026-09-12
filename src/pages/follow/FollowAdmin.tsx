@@ -8,6 +8,7 @@ import {
   deletePost,
   deleteWallPost,
   geocodeCity,
+  getAllTestimonialsAdmin,
   getAllWallPostsAdmin,
   getDestinations,
   getEventLogs,
@@ -17,7 +18,9 @@ import {
   getSettings,
   hideWallPost,
   notifyFollowers,
+  publishPublicLocation,
   reviewNameClaim,
+  reviewTestimonial,
   deleteNameClaim,
   describeFollowError,
   updateLocation,
@@ -32,11 +35,14 @@ import type {
   NameClaim,
   Post,
   SiteSettings,
+  Testimonial,
   WallPost,
   EventLog,
 } from "@/lib/follow/types";
+import { matchDestination } from "@/lib/follow/matchStop";
+import ImageCropModal from "@/components/follow/ImageCropModal";
 
-type Tab = "location" | "destinations" | "posts" | "wall" | "claims" | "settings" | "log";
+type Tab = "location" | "destinations" | "posts" | "wall" | "claims" | "reviews" | "settings" | "log";
 
 export default function FollowAdmin() {
   const { loading, isAdmin, configured, user } = useAuth();
@@ -50,6 +56,7 @@ export default function FollowAdmin() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [wall, setWall] = useState<WallPost[]>([]);
   const [claims, setClaims] = useState<NameClaim[]>([]);
+  const [reviews, setReviews] = useState<Testimonial[]>([]);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [eventLogs, setEventLogs] = useState<EventLog[]>([]);
 
@@ -59,6 +66,7 @@ export default function FollowAdmin() {
   const [postTitle, setPostTitle] = useState("");
   const [postBody, setPostBody] = useState("");
   const [postFile, setPostFile] = useState<File | null>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [savingPost, setSavingPost] = useState(false);
 
@@ -69,6 +77,7 @@ export default function FollowAdmin() {
       getPosts(),
       getAllWallPostsAdmin(),
       getNameClaimsAdmin(),
+      getAllTestimonialsAdmin(),
       getSettings(),
       getEventLogs(),
     ]);
@@ -85,8 +94,9 @@ export default function FollowAdmin() {
     setPosts((prev) => value(2, prev));
     setWall((prev) => value(3, prev));
     setClaims((prev) => value(4, prev));
-    setSettings((prev) => value(5, prev));
-    setEventLogs((prev) => value(6, prev));
+    setReviews((prev) => value(5, prev));
+    setSettings((prev) => value(6, prev));
+    setEventLogs((prev) => value(7, prev));
   }, []);
 
   useEffect(() => {
@@ -111,19 +121,39 @@ export default function FollowAdmin() {
     setError(null);
   };
 
+  const syncStopToCurrent = async (list: Destination[], cityLabel: string) => {
+    const match = matchDestination(list, cityLabel);
+    if (!match) return list;
+    const next = list.map((d) => {
+      if (d.id === match.id) return { ...d, status: "current" as const };
+      if (d.status === "current") return { ...d, status: "done" as const };
+      return d;
+    });
+    await Promise.all(
+      next
+        .filter((d, i) => d.status !== list[i]?.status)
+        .map((d) => upsertDestination({ ...d, status: d.status })),
+    );
+    return next;
+  };
+
   const onSaveLocation = async (e: FormEvent) => {
     e.preventDefault();
     try {
       const geo = await geocodeCity(cityInput);
       if (!geo) throw new Error("Could not find that city/area. Try a clearer name.");
+      const label = cityInput.trim() || geo.label;
       const updated = await updateLocation({
-        city_label: cityInput.trim() || geo.label,
+        city_label: label,
         lat: geo.lat,
         lng: geo.lng,
       });
+      await publishPublicLocation();
+      const dests = await syncStopToCurrent(destinations, label);
+      setDestinations(dests);
       setLocation(updated);
-      flash("Saved. Public map updates in 24 hours.");
-      // Don't email followers until the pin goes public (keepalive promote).
+      flash("Map updated now.");
+      void notifyFollowers("location", `${updated.lat},${updated.lng}`, updated.city_label).catch(() => undefined);
     } catch (err) {
       setError(describeFollowError(err, "Failed to update location"));
     }
@@ -152,8 +182,26 @@ export default function FollowAdmin() {
 
   const onStatusChange = async (d: Destination, status: DestinationStatus) => {
     try {
+      if (status === "current") {
+        await Promise.all(
+          destinations
+            .filter((row) => row.status === "current" && row.id !== d.id)
+            .map((row) => upsertDestination({ ...row, status: "done" })),
+        );
+      }
       await upsertDestination({ ...d, status });
+      if (status === "current" && d.lat != null && d.lng != null) {
+        const updated = await updateLocation({
+          city_label: d.city_label || d.name,
+          lat: d.lat,
+          lng: d.lng,
+        });
+        await publishPublicLocation();
+        setLocation(updated);
+        setCityInput(updated.city_label);
+      }
       await load();
+      if (status === "current") flash("Map updated now.");
     } catch (err) {
       setError(describeFollowError(err, "Failed to update destination"));
     }
@@ -219,6 +267,7 @@ export default function FollowAdmin() {
     { id: "posts", label: "Road notes" },
     { id: "settings", label: "Support links" },
     { id: "claims", label: "Car names" },
+    { id: "reviews", label: "Reviews" },
     { id: "wall", label: "Guestbook" },
     { id: "log", label: "Log" },
   ];
@@ -258,7 +307,7 @@ export default function FollowAdmin() {
         {tab === "location" && (
           <form onSubmit={(e) => void onSaveLocation(e)} className="space-y-3 rounded-md border border-white/60 bg-white/55 p-4">
             <p className="text-sm text-muted-foreground">
-              City / area only — saved privately now, shown on the public map after 24 hours.
+              City / area only — saved to the public map immediately. If it matches a route stop, that stop becomes current.
             </p>
             <label className="block space-y-1">
               <span className="text-sm font-medium">City or area</span>
@@ -276,7 +325,7 @@ export default function FollowAdmin() {
               </p>
             )}
             <button type="submit" className="btn-primary text-sm">
-              Save location (public in 24h)
+              Save location (updates map now)
             </button>
           </form>
         )}
@@ -363,11 +412,16 @@ export default function FollowAdmin() {
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp,image/*"
-                  onChange={(e) => setPostFile(e.target.files?.[0] ?? null)}
+                  onChange={(e) => {
+                    const next = e.target.files?.[0] ?? null;
+                    e.target.value = "";
+                    if (next) setCropFile(next);
+                  }}
                 />
                 <span className="block text-xs text-muted-foreground">
-                  Phone photos are shrunk automatically. JPEG or PNG works best.
+                  Crop the view window, preview, then publish. JPEG or PNG works best.
                 </span>
+                {postFile && <p className="text-xs text-primary">Cropped photo ready.</p>}
               </label>
               <div className="flex flex-wrap gap-2">
                 <button type="submit" className="btn-primary text-sm" disabled={savingPost}>
@@ -422,6 +476,40 @@ export default function FollowAdmin() {
           </div>
         )}
 
+        {tab === "reviews" && (
+          <ul className="space-y-2">
+            {reviews.length === 0 && <li className="text-sm text-muted-foreground">No reviews yet.</li>}
+            {reviews.map((row) => (
+              <li key={row.id} className="rounded-md border border-white/60 bg-white/55 px-3 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">{row.status}</p>
+                <p className="mt-1 text-sm">{row.final_text}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {row.display_name}
+                  {row.city ? ` · ${row.city}` : ""}
+                </p>
+                {row.status === "pending_hitl" && (
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      className="btn-primary py-1.5 text-xs"
+                      onClick={() => void reviewTestimonial(row.id, "published").then(load)}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary py-1.5 text-xs"
+                      onClick={() => void reviewTestimonial(row.id, "rejected").then(load)}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+
         {tab === "wall" && (
           <ul className="space-y-2">
             {wall.map((w) => (
@@ -449,6 +537,7 @@ export default function FollowAdmin() {
                   </div>
                 </div>
                 <p className="mt-1 text-sm whitespace-pre-wrap">{w.body}</p>
+                {w.parent_id && <p className="mt-1 text-xs text-muted-foreground">Reply</p>}
               </li>
             ))}
           </ul>
@@ -605,6 +694,16 @@ export default function FollowAdmin() {
           </form>
         )}
       </main>
+      {cropFile && (
+        <ImageCropModal
+          file={cropFile}
+          onCancel={() => setCropFile(null)}
+          onConfirm={(file) => {
+            setPostFile(file);
+            setCropFile(null);
+          }}
+        />
+      )}
     </div>
   );
 }

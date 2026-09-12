@@ -8,7 +8,7 @@ type Body = {
   payload?: Record<string, unknown>;
 };
 
-const EVENT_TYPES: SiteEventType[] = ["user", "signin", "quote", "name", "wall", "post", "location", "system"];
+const EVENT_TYPES: SiteEventType[] = ["user", "signin", "quote", "name", "wall", "post", "location", "review", "system"];
 
 export async function POST(request: Request) {
   const secret = env("TELEGRAM_WEBHOOK_SECRET");

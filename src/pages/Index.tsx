@@ -6,6 +6,8 @@ import ServicesSection from "@/components/ServicesSection";
 import ImageStrip from "@/components/ImageStrip";
 import AboutSection from "@/components/AboutSection";
 import FollowShoutSection from "@/components/FollowShoutSection";
+import TestimonialsStrip from "@/components/TestimonialsStrip";
+import LawsTicker from "@/components/LawsTicker";
 import QuoteSection from "@/components/QuoteSection";
 import Footer from "@/components/Footer";
 import SitePopups, { type PopupId } from "@/components/SitePopups";
@@ -27,6 +29,8 @@ export default function Index() {
         <ImageStrip />
         <AboutSection onLearnMore={() => openPopup("about")} onGetQuote={openQuote} />
         <FollowShoutSection />
+        <TestimonialsStrip />
+        <LawsTicker />
         <QuoteSection />
       </main>
       <Footer onOpen={openPopup} onGetQuote={openQuote} />

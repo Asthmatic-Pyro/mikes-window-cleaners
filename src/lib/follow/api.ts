@@ -10,17 +10,19 @@ import type {
   ReactionType,
   SiteSettings,
   EventLog,
+  Testimonial,
+  TestimonialStatus,
   WallPost,
 } from "@/lib/follow/types";
 
-/** Public map pin — delayed 24h from admin updates. */
+/** Public map pin — updates immediately on manual admin save. */
 export async function getPublicLocation(): Promise<LocationPublic | null> {
   const { data, error } = await supabase.from("location_public").select("*").eq("id", 1).maybeSingle();
   if (error) throw error;
   return data;
 }
 
-/** Admin live pin (not shown publicly until 24h delay). */
+/** Admin live pin. */
 export async function getLocation(): Promise<LocationCurrent | null> {
   const { data, error } = await supabase.from("location_current").select("*").eq("id", 1).maybeSingle();
   if (error) throw error;
@@ -36,6 +38,28 @@ export async function updateLocation(patch: Pick<LocationCurrent, "city_label" |
     .single();
   if (error) throw error;
   return data;
+}
+
+/** Copy the live pin to the public map right now. */
+export async function publishPublicLocation() {
+  const { data, error } = await supabase.rpc("promote_public_location_now");
+  if (!error && data) return data as LocationPublic;
+
+  const current = await getLocation();
+  if (!current) throw error ?? new Error("No current location to publish.");
+  const { data: published, error: writeError } = await supabase
+    .from("location_public")
+    .upsert({
+      id: 1,
+      city_label: current.city_label,
+      lat: current.lat,
+      lng: current.lng,
+      published_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+  if (writeError) throw writeError;
+  return published;
 }
 
 export async function getDestinations(): Promise<Destination[]> {
@@ -258,10 +282,10 @@ export async function getAllWallPostsAdmin(): Promise<WallPost[]> {
   return (data as WallPost[]) ?? [];
 }
 
-export async function createWallPost(authorId: string, body: string) {
+export async function createWallPost(authorId: string, body: string, parentId?: string | null) {
   const { data, error } = await supabase
     .from("wall_posts")
-    .insert({ author_id: authorId, body: body.trim() })
+    .insert({ author_id: authorId, body: body.trim(), parent_id: parentId ?? null })
     .select("*, profiles(display_name)")
     .single();
   if (error) throw error;
@@ -416,6 +440,38 @@ export async function updateSettings(patch: Partial<SiteSettings>) {
 }
 
 /** Ask the server to email opted-in followers (admin session required). */
+export async function getPublishedTestimonials(): Promise<Testimonial[]> {
+  const { data, error } = await supabase
+    .from("testimonials")
+    .select("*")
+    .eq("status", "published")
+    .order("created_at", { ascending: false })
+    .limit(24);
+  if (error) throw error;
+  return (data as Testimonial[]) ?? [];
+}
+
+export async function getAllTestimonialsAdmin(): Promise<Testimonial[]> {
+  const { data, error } = await supabase
+    .from("testimonials")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(80);
+  if (error) throw error;
+  return (data as Testimonial[]) ?? [];
+}
+
+export async function reviewTestimonial(id: string, status: Extract<TestimonialStatus, "published" | "rejected">) {
+  const { data, error } = await supabase
+    .from("testimonials")
+    .update({ status, reviewed_at: new Date().toISOString() })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Testimonial;
+}
+
 export async function notifyFollowers(eventType: "post" | "location", eventKey: string, summary: string) {
   const { data: sessionData } = await supabase.auth.getSession();
   const token = sessionData.session?.access_token;

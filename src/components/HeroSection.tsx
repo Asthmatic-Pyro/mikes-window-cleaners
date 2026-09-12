@@ -61,6 +61,12 @@ export default function HeroSection({ onGetQuote, onSeeServices }: HeroSectionPr
               See Services
             </button>
             <Link
+              to="/reviews"
+              className="text-sm font-semibold text-white/85 underline-offset-4 hover:text-white hover:underline sm:ml-1"
+            >
+              Review me
+            </Link>
+            <Link
               to="/Follow"
               className="text-sm font-semibold text-white/85 underline-offset-4 hover:text-white hover:underline sm:ml-1"
             >

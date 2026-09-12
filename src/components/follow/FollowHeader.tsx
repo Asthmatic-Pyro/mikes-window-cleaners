@@ -15,6 +15,9 @@ export default function FollowHeader() {
           <Link to="/Follow" className="truncate font-display text-lg font-bold tracking-tight text-foreground">
             Follow Mike
           </Link>
+          <Link to="/reviews" className="text-sm font-medium text-muted-foreground hover:text-primary">
+            Review me
+          </Link>
         </div>
 
         <div className="flex shrink-0 items-center gap-2">

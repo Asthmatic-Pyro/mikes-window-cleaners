@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import FollowHeader from "@/components/follow/FollowHeader";
 import JourneyMap from "@/components/follow/JourneyMap";
@@ -7,6 +7,7 @@ import UpdatesFeed from "@/components/follow/UpdatesFeed";
 import CommunityWall from "@/components/follow/CommunityWall";
 import SupportSection from "@/components/follow/SupportSection";
 import NameOnCar from "@/components/follow/NameOnCar";
+import LawPanel from "@/components/follow/LawPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWeather } from "@/contexts/WeatherContext";
 import {
@@ -17,6 +18,7 @@ import {
   getSettings,
   getWallPosts,
 } from "@/lib/follow/api";
+import { routeProgress, stateFromLabel } from "@/lib/follow/matchStop";
 import type {
   Destination,
   LocationPublic,
@@ -37,6 +39,8 @@ export default function FollowPage() {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lawStop, setLawStop] = useState<{ state: string; label: string } | null>(null);
+  const progress = useMemo(() => routeProgress(destinations), [destinations]);
 
   const refreshAll = useCallback(async () => {
     try {
@@ -111,6 +115,13 @@ export default function FollowPage() {
             <p className="mt-2 max-w-xl text-muted-foreground">
               Cincinnati to Seattle the long way — Great Lakes, Atlantic, Gulf, Southwest, then the Pacific.
             </p>
+            {location && (
+              <p className="mt-2 text-sm text-foreground">
+                {location.city_label}
+                {progress.next ? ` · next ${progress.next.name}` : ""}
+                {progress.total ? ` · ${progress.percent}%` : ""}
+              </p>
+            )}
           </div>
 
           {loading && <p className="text-sm text-muted-foreground">Loading journey…</p>}
@@ -120,7 +131,7 @@ export default function FollowPage() {
             <div className="overflow-hidden rounded-md border border-white/60 bg-white/50 shadow-sm">
               <div className="flex flex-wrap items-end justify-between gap-2 border-b border-white/60 px-4 py-3">
                 <div>
-                  <p className="text-sm text-muted-foreground">Currently in (shown with a 24-hour delay)</p>
+                  <p className="text-sm text-muted-foreground">Currently in</p>
                   <p className="font-display text-2xl font-bold md:text-3xl">{location.city_label}</p>
                 </div>
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
@@ -140,9 +151,20 @@ export default function FollowPage() {
                 destinations={destinations}
                 weather={weather}
                 className="h-[min(62vh,480px)] min-h-[300px]"
+                onSelectDestination={(d) => {
+                  const state = stateFromLabel(d.city_label) || stateFromLabel(d.name);
+                  if (state) setLawStop({ state, label: d.name });
+                }}
               />
             </div>
           )}
+
+          {lawStop && (
+            <LawPanel state={lawStop.state} placeLabel={lawStop.label} onClose={() => setLawStop(null)} />
+          )}
+          <p className="text-xs text-muted-foreground">
+            Tap a stop for cannabis, recording, and firearms statutes. Not legal advice.
+          </p>
 
           <DestinationsList destinations={destinations} />
         </section>
