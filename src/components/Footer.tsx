@@ -40,6 +40,9 @@ export default function Footer({ onOpen, onGetQuote }: FooterProps) {
           <Link to="/Follow" className="transition-colors hover:text-white">
             Follow Mike
           </Link>
+          <Link to="/Follow#guestbook" className="transition-colors hover:text-white">
+            Guestbook
+          </Link>
           <Link to="/reviews" className="transition-colors hover:text-white">
             Review me
           </Link>

@@ -57,6 +57,12 @@ export default function Header({ onGetQuote, onOpen }: HeaderProps) {
             Follow
           </Link>
           <Link
+            to="/Follow#guestbook"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            Guestbook
+          </Link>
+          <Link
             to="/reviews"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
@@ -115,6 +121,13 @@ export default function Header({ onGetQuote, onOpen }: HeaderProps) {
               onClick={() => setOpen(false)}
             >
               Follow
+            </Link>
+            <Link
+              to="/Follow#guestbook"
+              className="rounded-md px-3 py-2.5 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
+              onClick={() => setOpen(false)}
+            >
+              Guestbook
             </Link>
             <Link
               to="/reviews"

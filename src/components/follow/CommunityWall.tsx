@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactElement } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { createWallPost, getReactions, toggleReaction } from "@/lib/follow/api";
@@ -10,6 +10,7 @@ type CommunityWallProps = {
 };
 
 const MAX = 140;
+const MAX_INDENT = 4;
 const EMOJIS: { type: ReactionType; glyph: string }[] = [
   { type: "like", glyph: "👍" },
   { type: "cheer", glyph: "🎉" },
@@ -95,6 +96,55 @@ export default function CommunityWall({ posts, onRefresh }: CommunityWallProps) 
     }
   };
 
+  const renderThread = (post: WallPost, depth: number): ReactElement => {
+    const children = byParent.get(post.id) ?? [];
+    const indent = Math.min(depth, MAX_INDENT);
+    return (
+      <li
+        key={post.id}
+        className={
+          depth === 0
+            ? "rounded-md border border-white/60 bg-white/50 px-3 py-2.5"
+            : "text-sm"
+        }
+        style={depth > 0 ? { marginLeft: `${Math.min(indent, 3) * 0.75}rem` } : undefined}
+      >
+        <p className="text-sm">
+          <span className="font-semibold">{post.profiles?.display_name || "Friend"}</span>
+          <span className="text-muted-foreground"> — {post.body}</span>
+        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {EMOJIS.map((emoji) => {
+            const count = counts.get(post.id)?.[emoji.type] ?? 0;
+            const active = mine.has(`${post.id}:${emoji.type}`);
+            return (
+              <button
+                key={emoji.type}
+                type="button"
+                className={`rounded-md px-1.5 py-0.5 text-sm ${active ? "bg-secondary" : "bg-white/40"}`}
+                onClick={() => void react(post.id, emoji.type)}
+                disabled={!user}
+              >
+                {emoji.glyph}
+                {count > 0 ? ` ${count}` : ""}
+              </button>
+            );
+          })}
+          {user && (
+            <button type="button" className="text-xs font-semibold text-primary" onClick={() => setReplyTo(post.id)}>
+              Reply
+            </button>
+          )}
+        </div>
+        {children.length > 0 && (
+          <ul className="mt-2 space-y-2 border-l border-border/70 pl-3">
+            {children.map((child) => renderThread(child, depth + 1))}
+          </ul>
+        )}
+      </li>
+    );
+  };
+
   return (
     <section className="space-y-3">
       <div>
@@ -140,67 +190,7 @@ export default function CommunityWall({ posts, onRefresh }: CommunityWallProps) 
       )}
 
       {roots.length > 0 && (
-        <ul className="space-y-3">
-          {roots.slice(0, 16).map((post) => (
-            <li key={post.id} className="rounded-md border border-white/60 bg-white/50 px-3 py-2.5">
-              <p className="text-sm">
-                <span className="font-semibold">{post.profiles?.display_name || "Friend"}</span>
-                <span className="text-muted-foreground"> — {post.body}</span>
-              </p>
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                {EMOJIS.map((emoji) => {
-                  const count = counts.get(post.id)?.[emoji.type] ?? 0;
-                  const active = mine.has(`${post.id}:${emoji.type}`);
-                  return (
-                    <button
-                      key={emoji.type}
-                      type="button"
-                      className={`rounded-md px-1.5 py-0.5 text-sm ${active ? "bg-secondary" : "bg-white/40"}`}
-                      onClick={() => void react(post.id, emoji.type)}
-                      disabled={!user}
-                    >
-                      {emoji.glyph}
-                      {count > 0 ? ` ${count}` : ""}
-                    </button>
-                  );
-                })}
-                {user && (
-                  <button type="button" className="text-xs font-semibold text-primary" onClick={() => setReplyTo(post.id)}>
-                    Reply
-                  </button>
-                )}
-              </div>
-              {(byParent.get(post.id) ?? []).length > 0 && (
-                <ul className="mt-2 space-y-2 border-l border-border/70 pl-3">
-                  {(byParent.get(post.id) ?? []).map((reply) => (
-                    <li key={reply.id} className="text-sm">
-                      <span className="font-semibold">{reply.profiles?.display_name || "Friend"}</span>
-                      <span className="text-muted-foreground"> — {reply.body}</span>
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {EMOJIS.map((emoji) => {
-                          const count = counts.get(reply.id)?.[emoji.type] ?? 0;
-                          const active = mine.has(`${reply.id}:${emoji.type}`);
-                          return (
-                            <button
-                              key={emoji.type}
-                              type="button"
-                              className={`rounded-md px-1.5 py-0.5 text-xs ${active ? "bg-secondary" : "bg-white/40"}`}
-                              onClick={() => void react(reply.id, emoji.type)}
-                              disabled={!user}
-                            >
-                              {emoji.glyph}
-                              {count > 0 ? ` ${count}` : ""}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ul>
+        <ul className="space-y-3">{roots.slice(0, 16).map((post) => renderThread(post, 0))}</ul>
       )}
     </section>
   );

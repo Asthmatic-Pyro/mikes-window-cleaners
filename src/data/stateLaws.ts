@@ -1,8 +1,14 @@
 export type LawTopic = "cannabis" | "recording" | "firearms";
 
+export type CannabisFact = "adult-use" | "medical-only" | "illegal";
+export type RecordingFact = "one-party" | "all-party";
+export type FirearmsFact = "permitless" | "permit" | "restricted";
+export type LawFact = CannabisFact | RecordingFact | FirearmsFact;
+
 export type LawRecord = {
   state: string;
   topic: LawTopic;
+  fact: LawFact;
   blurb: string;
   citation: string;
   sourceUrl: string;
@@ -14,6 +20,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "OH",
     topic: "cannabis",
+    fact: "adult-use",
     blurb: "Ohio voters legalized adult-use cannabis; adults 21+ may possess limited amounts under Chapter 3780, while unlicensed sale remains illegal.",
     citation: "Ohio Rev. Code Ch. 3780",
     sourceUrl: "https://codes.ohio.gov/ohio-revised-code/chapter-3780",
@@ -22,6 +29,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "OH",
     topic: "recording",
+    fact: "one-party",
     blurb: "Ohio generally allows a conversation participant to record (one-party consent) if the tap is not used to commit a crime.",
     citation: "Ohio Rev. Code § 2933.52",
     sourceUrl: "https://codes.ohio.gov/ohio-revised-code/section-2933.52",
@@ -30,6 +38,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "OH",
     topic: "firearms",
+    fact: "permitless",
     blurb: "Ohio allows a qualifying adult to carry a concealed handgun without a license, with places and person-based bans still in the code.",
     citation: "Ohio Rev. Code § 2923.111",
     sourceUrl: "https://codes.ohio.gov/ohio-revised-code/section-2923.111",
@@ -38,6 +47,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "PA",
     topic: "cannabis",
+    fact: "medical-only",
     blurb: "Pennsylvania allows medical cannabis for registered patients; recreational possession is still a crime under the Controlled Substance Act.",
     citation: "35 P.S. § 10231.101 et seq.; 35 P.S. § 780-113",
     sourceUrl: "https://www.pa.gov/agencies/doh/programs-and-services/medical-marijuana.html",
@@ -46,6 +56,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "PA",
     topic: "recording",
+    fact: "all-party",
     blurb: "Pennsylvania is an all-party consent state: intercepting a private conversation generally needs every participant’s consent.",
     citation: "18 Pa.C.S. §§ 5703–5704",
     sourceUrl: "https://www.legis.state.pa.us/cfdocs/legis/LI/consCheck.cfm?txtType=HTM&ttl=18&div=0&chpt=57",
@@ -54,6 +65,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "PA",
     topic: "firearms",
+    fact: "permit",
     blurb: "Carrying a concealed firearm in Pennsylvania generally requires a license to carry, with listed exceptions.",
     citation: "18 Pa.C.S. § 6106",
     sourceUrl: "https://www.legis.state.pa.us/cfdocs/legis/LI/consCheck.cfm?txtType=HTM&ttl=18&div=0&chpt=61",
@@ -62,6 +74,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "NY",
     topic: "cannabis",
+    fact: "adult-use",
     blurb: "New York allows adults 21+ to possess limited cannabis under the Marihuana Regulation and Taxation Act; unlicensed sale is still illegal.",
     citation: "N.Y. Cannabis Law; Penal Law Art. 222",
     sourceUrl: "https://cannabis.ny.gov/",
@@ -70,6 +83,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "NY",
     topic: "recording",
+    fact: "one-party",
     blurb: "New York generally follows one-party consent for recording a conversation you take part in, unless it is used to commit a crime.",
     citation: "N.Y. Penal Law § 250.00 et seq.",
     sourceUrl: "https://www.nysenate.gov/legislation/laws/PEN/250.00",
@@ -78,6 +92,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "NY",
     topic: "firearms",
+    fact: "permit",
     blurb: "New York requires a license to possess and carry most handguns; concealed carry is a licensed privilege with sensitive-place limits.",
     citation: "N.Y. Penal Law Art. 265 & 400",
     sourceUrl: "https://www.nysenate.gov/legislation/laws/PEN/A265",
@@ -86,6 +101,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "MA",
     topic: "cannabis",
+    fact: "adult-use",
     blurb: "Massachusetts allows adults 21+ to possess limited cannabis; licensed retail exists, and driving impaired remains illegal.",
     citation: "Mass. Gen. Laws ch. 94G",
     sourceUrl: "https://malegislature.gov/Laws/GeneralLaws/PartI/TitleXV/Chapter94G",
@@ -94,6 +110,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "MA",
     topic: "recording",
+    fact: "all-party",
     blurb: "Massachusetts bans secret interception of oral or wire communications; it is among the strictest all-party recording states.",
     citation: "Mass. Gen. Laws ch. 272, § 99",
     sourceUrl: "https://malegislature.gov/Laws/GeneralLaws/PartIV/TitleI/Chapter272/Section99",
@@ -102,6 +119,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "MA",
     topic: "firearms",
+    fact: "permit",
     blurb: "Massachusetts requires a firearms license to possess or carry; unlicensed carry is a crime.",
     citation: "Mass. Gen. Laws ch. 140, § 131",
     sourceUrl: "https://malegislature.gov/Laws/GeneralLaws/PartI/TitleXX/Chapter140/Section131",
@@ -110,6 +128,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "RI",
     topic: "cannabis",
+    fact: "adult-use",
     blurb: "Rhode Island allows adults 21+ to possess limited cannabis under the state’s adult-use law.",
     citation: "R.I. Gen. Laws Ch. 21-28.11",
     sourceUrl: "https://webserver.rilegislature.gov/Statutes/TITLE21/21-28.11/INDEX.htm",
@@ -118,6 +137,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "RI",
     topic: "recording",
+    fact: "one-party",
     blurb: "Rhode Island generally allows a participant to record a conversation (one-party consent).",
     citation: "R.I. Gen. Laws § 11-35-21",
     sourceUrl: "https://webserver.rilegislature.gov/Statutes/TITLE11/11-35/11-35-21.htm",
@@ -126,6 +146,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "RI",
     topic: "firearms",
+    fact: "permit",
     blurb: "Rhode Island requires a license or permit to carry a pistol; open carry without a permit is generally prohibited.",
     citation: "R.I. Gen. Laws § 11-47-8",
     sourceUrl: "https://webserver.rilegislature.gov/Statutes/TITLE11/11-47/11-47-8.htm",
@@ -134,6 +155,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "CT",
     topic: "cannabis",
+    fact: "adult-use",
     blurb: "Connecticut allows adults 21+ to possess limited cannabis; unlicensed sale remains illegal.",
     citation: "Conn. Gen. Stat. § 21a-420a et seq.",
     sourceUrl: "https://www.cga.ct.gov/current/pub/chap_420h.htm",
@@ -142,6 +164,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "CT",
     topic: "recording",
+    fact: "all-party",
     blurb: "Connecticut has mixed recording rules: civil and criminal statutes can require consent beyond a simple one-party rule. Read the statute before recording.",
     citation: "Conn. Gen. Stat. § 52-570d; § 53a-189",
     sourceUrl: "https://www.cga.ct.gov/current/pub/chap_925.htm#sec_52-570d",
@@ -150,6 +173,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "CT",
     topic: "firearms",
+    fact: "permit",
     blurb: "Connecticut requires a permit to carry a pistol or revolver.",
     citation: "Conn. Gen. Stat. § 29-35",
     sourceUrl: "https://www.cga.ct.gov/current/pub/chap_529.htm#sec_29-35",
@@ -158,6 +182,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "DE",
     topic: "cannabis",
+    fact: "adult-use",
     blurb: "Delaware allows adults 21+ to possess limited cannabis under the state’s adult-use law.",
     citation: "16 Del. C. § 4701 et seq. (adult-use provisions)",
     sourceUrl: "https://delcode.delaware.gov/title16/c047/",
@@ -166,6 +191,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "DE",
     topic: "recording",
+    fact: "all-party",
     blurb: "Delaware generally requires all-party consent to intercept a private conversation.",
     citation: "11 Del. C. § 2402",
     sourceUrl: "https://delcode.delaware.gov/title11/c024/",
@@ -174,6 +200,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "DE",
     topic: "firearms",
+    fact: "permit",
     blurb: "Delaware requires a license to carry a concealed deadly weapon.",
     citation: "11 Del. C. § 1441",
     sourceUrl: "https://delcode.delaware.gov/title11/c005/sc07/",
@@ -182,6 +209,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "MD",
     topic: "cannabis",
+    fact: "adult-use",
     blurb: "Maryland allows adults 21+ to possess limited cannabis; public consumption and unlicensed sale remain restricted.",
     citation: "Md. Code, Crim. Law § 5-601 et seq. (as amended)",
     sourceUrl: "https://mgaleg.maryland.gov/mgawebsite/Laws/StatuteText?article=gcr&section=5-601",
@@ -190,6 +218,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "MD",
     topic: "recording",
+    fact: "all-party",
     blurb: "Maryland is an all-party consent state for intercepting wire or oral communications.",
     citation: "Md. Code, Cts. & Jud. Proc. § 10-402",
     sourceUrl: "https://mgaleg.maryland.gov/mgawebsite/Laws/StatuteText?article=gcj&section=10-402",
@@ -198,6 +227,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "MD",
     topic: "firearms",
+    fact: "permit",
     blurb: "Maryland requires a wear-and-carry permit for concealed handguns, with designated restricted places.",
     citation: "Md. Code, Public Safety § 5-303",
     sourceUrl: "https://mgaleg.maryland.gov/mgawebsite/Laws/StatuteText?article=gps&section=5-303",
@@ -206,6 +236,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "DC",
     topic: "cannabis",
+    fact: "adult-use",
     blurb: "D.C. allows adults 21+ to possess limited cannabis at home; Congress has blocked licensed recreational stores, so selling remains illegal.",
     citation: "D.C. Code § 48-904.01; Initiative 71",
     sourceUrl: "https://code.dccouncil.gov/us/dc/council/code/sections/48-904.01",
@@ -214,6 +245,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "DC",
     topic: "recording",
+    fact: "one-party",
     blurb: "D.C. generally allows a participant to record a conversation (one-party consent).",
     citation: "D.C. Code § 23-542",
     sourceUrl: "https://code.dccouncil.gov/us/dc/council/code/sections/23-542",
@@ -222,6 +254,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "DC",
     topic: "firearms",
+    fact: "permit",
     blurb: "D.C. requires registration of firearms and a concealed-carry license to carry in public.",
     citation: "D.C. Code § 7-2502.01; § 22-4504",
     sourceUrl: "https://code.dccouncil.gov/us/dc/council/code/titles/7/chapters/25",
@@ -230,6 +263,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "VA",
     topic: "cannabis",
+    fact: "adult-use",
     blurb: "Virginia allows adults 21+ to possess a limited amount of cannabis; licensed retail has lagged, and public use is restricted.",
     citation: "Va. Code § 4.1-1100",
     sourceUrl: "https://law.lis.virginia.gov/vacode/title4.1/chapter11/section4.1-1100/",
@@ -238,6 +272,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "VA",
     topic: "recording",
+    fact: "one-party",
     blurb: "Virginia generally allows a participant to record a conversation (one-party consent).",
     citation: "Va. Code § 19.2-62",
     sourceUrl: "https://law.lis.virginia.gov/vacode/title19.2/chapter6/section19.2-62/",
@@ -246,6 +281,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "VA",
     topic: "firearms",
+    fact: "permit",
     blurb: "Virginia allows concealed carry with a permit; open carry is generally lawful for eligible adults subject to place bans.",
     citation: "Va. Code § 18.2-308",
     sourceUrl: "https://law.lis.virginia.gov/vacode/title18.2/chapter7/section18.2-308/",
@@ -254,6 +290,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "NC",
     topic: "cannabis",
+    fact: "illegal",
     blurb: "North Carolina has not legalized recreational cannabis; possession remains a crime with limited hemp/CBD exceptions.",
     citation: "N.C. Gen. Stat. § 90-95",
     sourceUrl: "https://www.ncleg.gov/EnactedLegislation/Statutes/HTML/BySection/Chapter_90/GS_90-95.html",
@@ -262,6 +299,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "NC",
     topic: "recording",
+    fact: "one-party",
     blurb: "North Carolina generally allows a participant to record a conversation (one-party consent).",
     citation: "N.C. Gen. Stat. § 15A-287",
     sourceUrl: "https://www.ncleg.gov/EnactedLegislation/Statutes/HTML/BySection/Chapter_15A/GS_15A-287.html",
@@ -270,6 +308,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "NC",
     topic: "firearms",
+    fact: "permit",
     blurb: "North Carolina requires a concealed-handgun permit to carry concealed; open carry is generally allowed for eligible adults.",
     citation: "N.C. Gen. Stat. § 14-269",
     sourceUrl: "https://www.ncleg.gov/EnactedLegislation/Statutes/HTML/BySection/Chapter_14/GS_14-269.html",
@@ -278,6 +317,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "SC",
     topic: "cannabis",
+    fact: "illegal",
     blurb: "South Carolina has not legalized recreational cannabis; possession remains a crime.",
     citation: "S.C. Code § 44-53-370",
     sourceUrl: "https://www.scstatehouse.gov/code/t44c053.php",
@@ -286,6 +326,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "SC",
     topic: "recording",
+    fact: "one-party",
     blurb: "South Carolina generally allows a participant to record a conversation (one-party consent).",
     citation: "S.C. Code § 17-30-30",
     sourceUrl: "https://www.scstatehouse.gov/code/t17c030.php",
@@ -294,6 +335,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "SC",
     topic: "firearms",
+    fact: "permit",
     blurb: "South Carolina allows concealed carry with a permit; the state also has open-carry rules for eligible adults.",
     citation: "S.C. Code § 23-31-210 et seq.",
     sourceUrl: "https://www.scstatehouse.gov/code/t23c031.php",
@@ -302,6 +344,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "GA",
     topic: "cannabis",
+    fact: "medical-only",
     blurb: "Georgia has not legalized recreational cannabis; low-THC oil is available only in a narrow medical program.",
     citation: "O.C.G.A. § 16-13-30; § 16-12-191",
     sourceUrl: "https://law.georgia.gov/ocga/16-13-30",
@@ -310,6 +353,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "GA",
     topic: "recording",
+    fact: "one-party",
     blurb: "Georgia generally allows a participant to record a conversation (one-party consent).",
     citation: "O.C.G.A. § 16-11-62",
     sourceUrl: "https://law.georgia.gov/ocga/16-11-62",
@@ -318,6 +362,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "GA",
     topic: "firearms",
+    fact: "permitless",
     blurb: "Georgia allows eligible adults to carry without a license (constitutional carry), with restricted locations still in the code.",
     citation: "O.C.G.A. § 16-11-126",
     sourceUrl: "https://law.georgia.gov/ocga/16-11-126",
@@ -326,6 +371,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "FL",
     topic: "cannabis",
+    fact: "medical-only",
     blurb: "Florida allows medical cannabis for qualified patients; recreational possession remains illegal.",
     citation: "Fla. Stat. § 381.986; § 893.13",
     sourceUrl: "http://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0800-0899/0893/Sections/0893.13.html",
@@ -334,6 +380,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "FL",
     topic: "recording",
+    fact: "all-party",
     blurb: "Florida generally requires all-party consent to intercept an oral communication where there is a reasonable expectation of privacy.",
     citation: "Fla. Stat. § 934.03",
     sourceUrl: "http://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0900-0999/0934/Sections/0934.03.html",
@@ -342,6 +389,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "FL",
     topic: "firearms",
+    fact: "permitless",
     blurb: "Florida allows eligible adults to carry concealed without a permit (permitless carry), with listed prohibited places.",
     citation: "Fla. Stat. § 790.01",
     sourceUrl: "http://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0700-0799/0790/Sections/0790.01.html",
@@ -350,6 +398,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "AL",
     topic: "cannabis",
+    fact: "medical-only",
     blurb: "Alabama has a limited medical cannabis program; recreational possession remains illegal.",
     citation: "Ala. Code § 13A-12-213; Darren Wesley ‘Ato’ Hall Compassion Act",
     sourceUrl: "https://alison.legislature.state.al.us/code-of-alabama",
@@ -358,6 +407,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "AL",
     topic: "recording",
+    fact: "one-party",
     blurb: "Alabama generally allows a participant to record a conversation (one-party consent).",
     citation: "Ala. Code § 13A-11-31",
     sourceUrl: "https://alison.legislature.state.al.us/code-of-alabama",
@@ -366,6 +416,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "AL",
     topic: "firearms",
+    fact: "permitless",
     blurb: "Alabama allows eligible adults to carry concealed without a permit, with restricted locations.",
     citation: "Ala. Code § 13A-11-73",
     sourceUrl: "https://alison.legislature.state.al.us/code-of-alabama",
@@ -374,6 +425,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "MS",
     topic: "cannabis",
+    fact: "medical-only",
     blurb: "Mississippi allows medical cannabis for qualified patients; recreational possession remains illegal.",
     citation: "Miss. Code § 41-137-1 et seq.; § 41-29-139",
     sourceUrl: "https://www.mbmcc.ms.gov/",
@@ -382,6 +434,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "MS",
     topic: "recording",
+    fact: "one-party",
     blurb: "Mississippi generally allows a participant to record a conversation (one-party consent).",
     citation: "Miss. Code § 41-29-501 et seq.",
     sourceUrl: "https://law.justia.com/codes/mississippi/title-41/chapter-29/",
@@ -390,6 +443,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "MS",
     topic: "firearms",
+    fact: "permitless",
     blurb: "Mississippi allows eligible adults to carry without a permit in many circumstances, with restricted locations.",
     citation: "Miss. Code § 45-9-101; § 97-37-1",
     sourceUrl: "https://law.justia.com/codes/mississippi/title-45/chapter-9/",
@@ -398,6 +452,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "LA",
     topic: "cannabis",
+    fact: "medical-only",
     blurb: "Louisiana has a medical cannabis program; recreational possession remains illegal.",
     citation: "La. R.S. 40:966; 40:1046",
     sourceUrl: "https://legis.la.gov/legis/Law.aspx?d=96915",
@@ -406,6 +461,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "LA",
     topic: "recording",
+    fact: "one-party",
     blurb: "Louisiana generally allows a participant to record a conversation (one-party consent).",
     citation: "La. R.S. 15:1303",
     sourceUrl: "https://legis.la.gov/legis/Law.aspx?d=78733",
@@ -414,6 +470,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "LA",
     topic: "firearms",
+    fact: "permitless",
     blurb: "Louisiana allows eligible adults to carry concealed without a permit, with restricted locations.",
     citation: "La. R.S. 40:1379.3; 14:95",
     sourceUrl: "https://legis.la.gov/legis/Law.aspx?d=99626",
@@ -422,6 +479,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "TX",
     topic: "cannabis",
+    fact: "illegal",
     blurb: "Texas has not legalized recreational cannabis. Possessing two ounces or less is a Class B misdemeanor; it is not a 7-year felony for 7 grams.",
     citation: "Tex. Health & Safety Code § 481.121",
     sourceUrl: "https://statutes.capitol.texas.gov/Docs/HS/htm/HS.481.htm#481.121",
@@ -430,6 +488,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "TX",
     topic: "recording",
+    fact: "one-party",
     blurb: "Texas generally allows a participant to record a conversation (one-party consent).",
     citation: "Tex. Penal Code § 16.02",
     sourceUrl: "https://statutes.capitol.texas.gov/Docs/PE/htm/PE.16.htm#16.02",
@@ -438,6 +497,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "TX",
     topic: "firearms",
+    fact: "permitless",
     blurb: "Texas allows eligible adults to carry a handgun without a license, with listed prohibited places and person-based bans.",
     citation: "Tex. Penal Code § 46.02; § 46.03",
     sourceUrl: "https://statutes.capitol.texas.gov/Docs/PE/htm/PE.46.htm",
@@ -446,6 +506,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "NM",
     topic: "cannabis",
+    fact: "adult-use",
     blurb: "New Mexico allows adults 21+ to possess limited cannabis under the Cannabis Regulation Act.",
     citation: "N.M. Stat. § 26-2C-1 et seq.",
     sourceUrl: "https://nmonesource.com/nmos/nmsa/en/item/4399/index.do",
@@ -454,6 +515,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "NM",
     topic: "recording",
+    fact: "one-party",
     blurb: "New Mexico generally allows a participant to record a conversation (one-party consent).",
     citation: "N.M. Stat. § 30-12-1",
     sourceUrl: "https://nmonesource.com/nmos/nmsa/en/item/4396/index.do",
@@ -462,6 +524,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "NM",
     topic: "firearms",
+    fact: "permit",
     blurb: "New Mexico allows concealed carry with a license; open carry is generally lawful for eligible adults.",
     citation: "N.M. Stat. § 29-19-4",
     sourceUrl: "https://nmonesource.com/nmos/nmsa/en/item/4396/index.do",
@@ -470,6 +533,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "AZ",
     topic: "cannabis",
+    fact: "adult-use",
     blurb: "Arizona allows adults 21+ to possess limited cannabis under Proposition 207 / Title 36.",
     citation: "Ariz. Rev. Stat. § 36-2852",
     sourceUrl: "https://www.azleg.gov/viewdocument/?docName=https://www.azleg.gov/ars/36/02852.htm",
@@ -478,6 +542,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "AZ",
     topic: "recording",
+    fact: "one-party",
     blurb: "Arizona generally allows a participant to record a conversation (one-party consent).",
     citation: "Ariz. Rev. Stat. § 13-3005",
     sourceUrl: "https://www.azleg.gov/viewdocument/?docName=https://www.azleg.gov/ars/13/03005.htm",
@@ -486,6 +551,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "AZ",
     topic: "firearms",
+    fact: "permitless",
     blurb: "Arizona allows eligible adults to carry openly or concealed without a permit, with restricted locations.",
     citation: "Ariz. Rev. Stat. § 13-3102",
     sourceUrl: "https://www.azleg.gov/viewdocument/?docName=https://www.azleg.gov/ars/13/03102.htm",
@@ -494,6 +560,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "NV",
     topic: "cannabis",
+    fact: "adult-use",
     blurb: "Nevada allows adults 21+ to possess limited cannabis; public consumption is restricted.",
     citation: "Nev. Rev. Stat. § 678D.200",
     sourceUrl: "https://www.leg.state.nv.us/nrs/NRS-678D.html",
@@ -502,6 +569,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "NV",
     topic: "recording",
+    fact: "one-party",
     blurb: "Nevada generally allows a participant to record an in-person conversation, with extra rules for some telephone intercepts. Read the statute.",
     citation: "Nev. Rev. Stat. § 200.620; § 200.650",
     sourceUrl: "https://www.leg.state.nv.us/nrs/NRS-200.html#NRS200Sec620",
@@ -510,6 +578,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "NV",
     topic: "firearms",
+    fact: "permit",
     blurb: "Nevada allows concealed carry with a permit; open carry is generally lawful for eligible adults.",
     citation: "Nev. Rev. Stat. § 202.3657",
     sourceUrl: "https://www.leg.state.nv.us/nrs/NRS-202.html#NRS202Sec3657",
@@ -518,6 +587,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "CA",
     topic: "cannabis",
+    fact: "adult-use",
     blurb: "California allows adults 21+ to possess limited cannabis; unlicensed sale and some public use remain illegal.",
     citation: "Cal. Health & Safety Code § 11362.1",
     sourceUrl: "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=HSC&sectionNum=11362.1",
@@ -526,6 +596,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "CA",
     topic: "recording",
+    fact: "all-party",
     blurb: "California requires all-party consent to record a confidential communication.",
     citation: "Cal. Penal Code § 632",
     sourceUrl: "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=PEN&sectionNum=632",
@@ -534,6 +605,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "CA",
     topic: "firearms",
+    fact: "permit",
     blurb: "California requires a license to carry a concealed firearm; unlicensed concealed carry is a crime.",
     citation: "Cal. Penal Code § 25400; § 26150",
     sourceUrl: "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=PEN&sectionNum=25400",
@@ -542,6 +614,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "OR",
     topic: "cannabis",
+    fact: "adult-use",
     blurb: "Oregon allows adults 21+ to possess limited cannabis; public use and unlicensed sale are restricted.",
     citation: "Or. Rev. Stat. § 475C.305 et seq.",
     sourceUrl: "https://www.oregonlegislature.gov/bills_laws/ors/ors475C.html",
@@ -550,6 +623,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "OR",
     topic: "recording",
+    fact: "one-party",
     blurb: "Oregon generally allows a participant to record an in-person conversation; some electronic intercepts have extra consent rules.",
     citation: "Or. Rev. Stat. § 165.540",
     sourceUrl: "https://www.oregonlegislature.gov/bills_laws/ors/ors165.html",
@@ -558,6 +632,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "OR",
     topic: "firearms",
+    fact: "permit",
     blurb: "Oregon allows concealed carry with a license; Measure 114 licensing rules have been litigated — confirm current court status.",
     citation: "Or. Rev. Stat. § 166.291",
     sourceUrl: "https://www.oregonlegislature.gov/bills_laws/ors/ors166.html",
@@ -566,6 +641,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "WA",
     topic: "cannabis",
+    fact: "adult-use",
     blurb: "Washington allows adults 21+ to possess limited cannabis; public consumption is restricted.",
     citation: "Wash. Rev. Code § 69.50.4013",
     sourceUrl: "https://app.leg.wa.gov/RCW/default.aspx?cite=69.50.4013",
@@ -574,6 +650,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "WA",
     topic: "recording",
+    fact: "all-party",
     blurb: "Washington generally requires all-party consent to intercept a private communication; a clear recorded announcement can satisfy consent.",
     citation: "Wash. Rev. Code § 9.73.030",
     sourceUrl: "https://app.leg.wa.gov/RCW/default.aspx?cite=9.73.030",
@@ -582,6 +659,7 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "WA",
     topic: "firearms",
+    fact: "permit",
     blurb: "Washington requires a concealed-pistol license to carry a concealed handgun.",
     citation: "Wash. Rev. Code § 9.41.050",
     sourceUrl: "https://app.leg.wa.gov/RCW/default.aspx?cite=9.41.050",
@@ -595,10 +673,54 @@ export const LAW_TOPICS: { id: LawTopic; label: string }[] = [
   { id: "firearms", label: "Firearms" },
 ];
 
+export const CANNABIS_CHOICES: { id: CannabisFact; label: string }[] = [
+  { id: "adult-use", label: "Adult-use legal (limited possession)" },
+  { id: "medical-only", label: "Medical only / no recreational" },
+  { id: "illegal", label: "Recreational illegal" },
+];
+
+export const RECORDING_CHOICES: { id: RecordingFact; label: string }[] = [
+  { id: "one-party", label: "One-party consent" },
+  { id: "all-party", label: "All-party consent" },
+];
+
+export const FIREARMS_CHOICES: { id: FirearmsFact; label: string }[] = [
+  { id: "permitless", label: "Permitless / constitutional carry" },
+  { id: "permit", label: "License or permit required to carry" },
+  { id: "restricted", label: "Heavily restricted" },
+];
+
+export function choicesForTopic(topic: LawTopic) {
+  if (topic === "cannabis") return CANNABIS_CHOICES;
+  if (topic === "recording") return RECORDING_CHOICES;
+  return FIREARMS_CHOICES;
+}
+
 export function lawsForState(state: string) {
   return STATE_LAWS.filter((row) => row.state === state.toUpperCase());
 }
 
 export function uniqueLawStates() {
   return [...new Set(STATE_LAWS.map((row) => row.state))];
+}
+
+const STAMP_KEY = "mwc_law_stamps";
+
+export function getLawStamps(): string[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem(STAMP_KEY) || "[]") as string[];
+    return Array.isArray(raw) ? raw : [];
+  } catch {
+    return [];
+  }
+}
+
+export function addLawStamp(state: string) {
+  const next = [...new Set([...getLawStamps(), state.toUpperCase()])];
+  try {
+    localStorage.setItem(STAMP_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore */
+  }
+  return next;
 }

@@ -80,9 +80,7 @@ begin
   if parent is null then
     raise exception 'parent missing';
   end if;
-  if parent.parent_id is not null then
-    raise exception 'replies are only one level deep';
-  end if;
+  -- Nested replies allowed; thread_root_id always walks up to the root note.
   new.thread_root_id := coalesce(parent.thread_root_id, parent.id);
   return new;
 end;

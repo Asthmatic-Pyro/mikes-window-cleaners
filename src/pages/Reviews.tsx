@@ -40,11 +40,11 @@ export default function ReviewsPage() {
         body: JSON.stringify({ cleaned, after, again, comments }),
       });
       const body = (await res.json()) as { draft?: string; error?: string };
-      if (!res.ok || !body.draft) throw new Error(body.error || "Llama could not draft that review.");
+      if (!res.ok || !body.draft) throw new Error(body.error || "AI could not draft that review.");
       setDraft(body.draft);
       setStep("draft");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Llama drafting failed.");
+      setError(err instanceof Error ? err.message : "AI drafting failed.");
     } finally {
       setBusy(false);
     }
@@ -85,20 +85,21 @@ export default function ReviewsPage() {
           <p className="text-sm font-semibold uppercase tracking-wide text-primary">Review me</p>
           <h1 className="mt-2 font-display text-4xl font-extrabold tracking-tight">Testimonials</h1>
           <p className="mt-2 text-muted-foreground">
-            Honest notes about a storefront clean. Llama can draft from your answers; you edit; Mike approves before it
-            goes live.
+            Honest notes about a storefront clean. A Groq-hosted model can draft from your answers; you edit; Mike
+            approves before it goes live.
           </p>
         </div>
 
         {step === "consent" && (
           <section className="space-y-4 rounded-md border border-white/60 bg-white/55 p-5">
             <p className="text-sm leading-relaxed">
-              A Llama language model will turn your answers into a draft review. You can edit or throw it away. Nothing
-              posts until you approve, and then Mike approves it too. This is not a fake Google review generator.
+              A Groq-hosted model will turn your answers into a draft review. You can edit or throw it away. Nothing
+              posts until you approve, and then Mike approves it on Telegram too. This is not a fake Google review
+              generator.
             </p>
             <label className="flex items-start gap-2 text-sm">
               <input type="checkbox" className="mt-1" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-              I understand a Llama model will draft from my answers, and Mike still has to approve it.
+              I understand a Groq-hosted model will draft from my answers, and Mike still has to approve it.
             </label>
             <button type="button" className="btn-primary text-sm" disabled={!consent} onClick={() => setStep("questions")}>
               Continue
@@ -122,7 +123,7 @@ export default function ReviewsPage() {
             />
             {error && <p className="text-sm text-red-600">{error}</p>}
             <button type="submit" className="btn-primary text-sm" disabled={busy}>
-              {busy ? "Drafting…" : "Draft with Llama"}
+              {busy ? "Drafting…" : "Draft with AI"}
             </button>
           </form>
         )}

@@ -10,6 +10,7 @@ import NameOnCar from "@/components/follow/NameOnCar";
 import LawPanel from "@/components/follow/LawPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWeather } from "@/contexts/WeatherContext";
+import { getLawStamps } from "@/data/stateLaws";
 import {
   getApprovedNames,
   getDestinations,
@@ -40,6 +41,7 @@ export default function FollowPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [lawStop, setLawStop] = useState<{ state: string; label: string } | null>(null);
+  const [lawStamps, setLawStamps] = useState<string[]>(() => getLawStamps());
   const progress = useMemo(() => routeProgress(destinations), [destinations]);
 
   const refreshAll = useCallback(async () => {
@@ -81,6 +83,13 @@ export default function FollowPage() {
       void updateProfile({ notify_opt_in: true });
     }
   }, [user, profile, updateProfile]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (window.location.hash !== "#guestbook") return;
+    const el = document.getElementById("guestbook");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [loading]);
 
   if (!configured) {
     return (
@@ -160,11 +169,19 @@ export default function FollowPage() {
           )}
 
           {lawStop && (
-            <LawPanel state={lawStop.state} placeLabel={lawStop.label} onClose={() => setLawStop(null)} />
+            <LawPanel
+              state={lawStop.state}
+              placeLabel={lawStop.label}
+              onClose={() => setLawStop(null)}
+              onStamp={setLawStamps}
+            />
           )}
           <p className="text-xs text-muted-foreground">
-            Tap a stop for cannabis, recording, and firearms statutes. Not legal advice.
+            Tap a stop for cannabis, recording, and firearms statutes. Read, quiz, earn a stamp. Not legal advice.
           </p>
+          {lawStamps.length > 0 && (
+            <p className="text-sm font-medium text-primary">States researched: {lawStamps.join(" · ")}</p>
+          )}
 
           <DestinationsList destinations={destinations} />
         </section>
@@ -175,7 +192,9 @@ export default function FollowPage() {
         <div className="space-y-10 border-t border-border/50 pt-10">
           <SupportSection settings={settings} />
           <NameOnCar names={names} settings={settings} onSubmitted={() => void refreshAll()} />
-          <CommunityWall posts={wall} onRefresh={() => void refreshAll()} />
+          <div id="guestbook" className="scroll-mt-24">
+            <CommunityWall posts={wall} onRefresh={() => void refreshAll()} />
+          </div>
 
           {user && profile && (
             <label className="flex items-center gap-2 text-sm text-muted-foreground">

@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   const key = env("GROQ_API_KEY");
   if (!key) {
     return Response.json(
-      { error: "Llama drafting is offline until GROQ_API_KEY is set. Nothing was published." },
+      { error: "AI drafting is offline until GROQ_API_KEY is set. Nothing was published." },
       { status: 503 },
     );
   }
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     `Open comments (most important): ${comments}`,
   ].join("\n");
 
-  let lastError = "Llama did not return a draft.";
+  let lastError = "AI did not return a draft.";
   for (const model of MODELS) {
     try {
       const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
