@@ -41,6 +41,8 @@ import type {
 } from "@/lib/follow/types";
 import { matchDestination } from "@/lib/follow/matchStop";
 import ImageCropModal from "@/components/follow/ImageCropModal";
+import StarRating from "@/components/StarRating";
+import { testimonialRating } from "@/lib/follow/rating";
 
 type Tab = "location" | "destinations" | "posts" | "wall" | "claims" | "reviews" | "settings" | "log";
 
@@ -479,34 +481,42 @@ export default function FollowAdmin() {
         {tab === "reviews" && (
           <ul className="space-y-2">
             {reviews.length === 0 && <li className="text-sm text-muted-foreground">No reviews yet.</li>}
-            {reviews.map((row) => (
-              <li key={row.id} className="rounded-md border border-white/60 bg-white/55 px-3 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary">{row.status}</p>
-                <p className="mt-1 text-sm">{row.final_text}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {row.display_name}
-                  {row.city ? ` · ${row.city}` : ""}
-                </p>
-                {row.status === "pending_hitl" && (
-                  <div className="mt-2 flex gap-2">
-                    <button
-                      type="button"
-                      className="btn-primary py-1.5 text-xs"
-                      onClick={() => void reviewTestimonial(row.id, "published").then(load)}
-                    >
-                      Approve
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-secondary py-1.5 text-xs"
-                      onClick={() => void reviewTestimonial(row.id, "rejected").then(load)}
-                    >
-                      Reject
-                    </button>
-                  </div>
-                )}
-              </li>
-            ))}
+            {reviews.map((row) => {
+              const stars = testimonialRating(row.answers);
+              return (
+                <li key={row.id} className="rounded-md border border-white/60 bg-white/55 px-3 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">{row.status}</p>
+                  {stars ? (
+                    <div className="mt-1">
+                      <StarRating value={stars} readOnly size="sm" />
+                    </div>
+                  ) : null}
+                  <p className="mt-1 text-sm">{row.final_text}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {row.display_name}
+                    {row.city ? ` · ${row.city}` : ""}
+                  </p>
+                  {row.status === "pending_hitl" && (
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        type="button"
+                        className="btn-primary py-1.5 text-xs"
+                        onClick={() => void reviewTestimonial(row.id, "published").then(load)}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-secondary py-1.5 text-xs"
+                        onClick={() => void reviewTestimonial(row.id, "rejected").then(load)}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
 

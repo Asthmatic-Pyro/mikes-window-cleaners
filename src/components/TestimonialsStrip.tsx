@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import StarRating from "@/components/StarRating";
 import { getPublishedTestimonials } from "@/lib/follow/api";
+import { testimonialRating } from "@/lib/follow/rating";
 import type { Testimonial } from "@/lib/follow/types";
 
 export default function TestimonialsStrip() {
@@ -27,15 +29,19 @@ export default function TestimonialsStrip() {
         <p className="mt-6 text-sm text-muted-foreground">No published reviews yet. Be the first.</p>
       ) : (
         <ul className="mt-6 grid gap-4 md:grid-cols-3">
-          {rows.map((row) => (
-            <li key={row.id} className="rounded-md border border-white/60 bg-white/55 p-4">
-              <p className="text-sm leading-relaxed">&ldquo;{row.final_text}&rdquo;</p>
-              <p className="mt-3 text-xs font-semibold text-muted-foreground">
-                {row.display_name}
-                {row.city ? ` · ${row.city}` : ""}
-              </p>
-            </li>
-          ))}
+          {rows.map((row) => {
+            const stars = testimonialRating(row.answers);
+            return (
+              <li key={row.id} className="rounded-md border border-white/60 bg-white/55 p-4">
+                {stars ? <StarRating value={stars} readOnly size="sm" /> : null}
+                <p className={`text-sm leading-relaxed ${stars ? "mt-2" : ""}`}>&ldquo;{row.final_text}&rdquo;</p>
+                <p className="mt-3 text-xs font-semibold text-muted-foreground">
+                  {row.display_name}
+                  {row.city ? ` · ${row.city}` : ""}
+                </p>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

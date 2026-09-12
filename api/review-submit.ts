@@ -1,11 +1,15 @@
 import { adminClient, alertMike, ensureTelegramWebhook } from "./_lib/telegram.js";
 
+function starText(rating: number) {
+  return `${"★".repeat(rating)}${"☆".repeat(5 - rating)}`;
+}
+
 type Body = {
   displayName?: string;
   city?: string;
-  answers?: Record<string, string>;
-  draftText?: string;
+  rating?: number | string;
   finalText?: string;
+  draftText?: string;
   consent?: boolean;
 };
 
@@ -21,9 +25,19 @@ export async function POST(request: Request) {
     return Response.json({ error: "Consent is required." }, { status: 400 });
   }
 
-  const finalText = body.finalText?.trim() || "";
+  const displayName = (body.displayName ?? "").trim();
+  if (!displayName) {
+    return Response.json({ error: "A first name is required." }, { status: 400 });
+  }
+
+  const rating = Number(body.rating);
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return Response.json({ error: "Pick a star rating from 1 to 5." }, { status: 400 });
+  }
+
+  const finalText = (body.finalText ?? body.draftText ?? "").trim();
   if (finalText.length < 20) {
-    return Response.json({ error: "Write or keep a short review before sending it to Mike." }, { status: 400 });
+    return Response.json({ error: "Write a short review before sending it to Mike." }, { status: 400 });
   }
 
   const admin = adminClient();
@@ -34,10 +48,10 @@ export async function POST(request: Request) {
   const { data, error } = await admin
     .from("testimonials")
     .insert({
-      display_name: (body.displayName ?? "").trim() || "Customer",
+      display_name: displayName,
       city: body.city?.trim() || null,
-      answers: body.answers ?? {},
-      draft_text: body.draftText?.trim() || finalText,
+      answers: { rating: String(rating) },
+      draft_text: finalText,
       final_text: finalText,
       status: "pending_hitl",
       consent_at: new Date().toISOString(),
@@ -50,11 +64,12 @@ export async function POST(request: Request) {
   }
 
   const id = data.id as string;
+  const city = body.city?.trim();
   await ensureTelegramWebhook();
   await alertMike(
     "review",
-    `Review pending approval\nFrom: ${(body.displayName ?? "Customer").trim()}${body.city ? ` · ${body.city}` : ""}\n\n${finalText}\n\nId: ${id}`,
-    { id, city: body.city ?? null },
+    `Review pending approval\nFrom: ${displayName}${city ? ` · ${city}` : ""}\n${starText(rating)} (${rating}/5)\n\n${finalText}\n\nId: ${id}`,
+    { id, city: city || null, rating },
     [
       [
         { text: "Approve", callback_data: `r:a:${id}` },
