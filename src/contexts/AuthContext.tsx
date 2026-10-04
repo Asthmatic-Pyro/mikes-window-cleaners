@@ -20,7 +20,6 @@ type AuthContextValue = {
   isAdmin: boolean;
   refreshProfile: () => Promise<void>;
   signInWithMagicLink: (email: string, displayName?: string, notifyOptIn?: boolean) => Promise<{ error: string | null }>;
-  signInWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   updateProfile: (patch: Partial<Pick<Profile, "display_name" | "notify_opt_in">>) => Promise<{ error: string | null }>;
 };
@@ -110,17 +109,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const signInWithPassword = useCallback(async (email: string, password: string) => {
-    if (!isSupabaseConfigured) {
-      return { error: "Follow is not configured yet." };
-    }
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-    return { error: error?.message ?? null };
-  }, []);
-
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setProfile(null);
@@ -146,11 +134,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAdmin: profile?.role === "admin",
       refreshProfile,
       signInWithMagicLink,
-      signInWithPassword,
       signOut,
       updateProfile,
     }),
-    [session, profile, loading, refreshProfile, signInWithMagicLink, signInWithPassword, signOut, updateProfile],
+    [session, profile, loading, refreshProfile, signInWithMagicLink, signOut, updateProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

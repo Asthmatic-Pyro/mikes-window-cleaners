@@ -26,7 +26,23 @@ npm run preview
 
 ## Follow (`/Follow`)
 
-Public journey hub: city-level map, destinations, updates, community wall, support links, and name-on-car claims. Admin at `/Follow/admin`.
+Public journey hub. Field GPS never writes this map.
+
+| Piece | What it does |
+|-------|----------------|
+| Map | City-level route, weather sky, and radar. Cincinnati-to-Seattle perimeter is drawn as a route |
+| Where I am | Admin types a place. The public map updates immediately, and the matching route stop becomes `current` |
+| Destinations / updates | The route list and the post feed |
+| Guestbook | Threads at `/Follow#guestbook` |
+| Review me | Star rating and a typed review. No AI draft. Admin can delete reviews |
+| Laws | Cited state-law notes and a quiz along the route |
+| Name on the car | Claims Mike can approve |
+| Support | Buy Me a Coffee, Cash App, Venmo, Amazon wishlist, mailbox copy |
+| Admin | `/Follow/admin` |
+
+Groq is fail-closed: if `GROQ_API_KEY` is missing, the site does not invent a draft.
+
+Homepage also links Follow, Linktree (`linktr.ee/michael.galioto`), and Review me. Quote requests still POST to `/api/quote`. Site events can alert Mike on Telegram when that integration is configured.
 
 ### Setup
 
@@ -50,6 +66,7 @@ update public.profiles set role = 'admin' where email = 'you@example.com';
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-only key for follower emails |
 | `SITE_URL` | Used in notification email links |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Same as quote form (follower emails) |
+| `LEAD_MAGNET_URL` / `LEAD_MAGNET_API_KEY` | Field API origin and `ADMIN_API_KEY`. Emails shops when Where I am changes. |
 
 ## Quote form (Resend)
 

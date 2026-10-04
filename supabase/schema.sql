@@ -67,7 +67,8 @@ create table if not exists public.posts (
 -- Community wall
 create table if not exists public.wall_posts (
   id uuid primary key default gen_random_uuid(),
-  author_id uuid not null references public.profiles (id) on delete cascade,
+  author_id uuid references public.profiles (id) on delete cascade,
+  display_name text check (display_name is null or (char_length(display_name) > 0 and char_length(display_name) <= 40)),
   body text not null check (char_length(body) > 0 and char_length(body) <= 280),
   hidden boolean not null default false,
   created_at timestamptz not null default now()

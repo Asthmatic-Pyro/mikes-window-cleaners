@@ -18,6 +18,7 @@ import {
   getSettings,
   hideWallPost,
   notifyFollowers,
+  requestRouteOutreach,
   publishPublicLocation,
   reviewNameClaim,
   reviewTestimonial,
@@ -46,6 +47,16 @@ import StarRating from "@/components/StarRating";
 import { testimonialRating } from "@/lib/follow/rating";
 
 type Tab = "location" | "destinations" | "posts" | "wall" | "claims" | "reviews" | "settings" | "log";
+
+function milesApart(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 3958.8 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 export default function FollowAdmin() {
   const { loading, isAdmin, configured, user } = useAuth();
@@ -157,6 +168,20 @@ export default function FollowAdmin() {
       setLocation(updated);
       flash("Map updated now.");
       void notifyFollowers("location", `${updated.lat},${updated.lng}`, updated.city_label).catch(() => undefined);
+      const prev = location;
+      const citySame = (prev?.city_label || "").trim().toLowerCase() === label.trim().toLowerCase();
+      const moved =
+        prev && Number.isFinite(prev.lat) && Number.isFinite(prev.lng)
+          ? milesApart(prev.lat, prev.lng, geo.lat, geo.lng)
+          : Number.POSITIVE_INFINITY;
+      if (!(citySame && moved < 15)) {
+        const ahead = dests
+          .filter((d) => d.status === "upcoming" && d.lat != null && d.lng != null)
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .slice(0, 2)
+          .map((d) => ({ label: d.city_label || d.name, lat: d.lat as number, lng: d.lng as number }));
+        void requestRouteOutreach({ label, lat: geo.lat, lng: geo.lng }, ahead).catch(() => undefined);
+      }
     } catch (err) {
       setError(describeFollowError(err, "Failed to update location"));
     }
@@ -543,7 +568,7 @@ export default function FollowAdmin() {
               <li key={w.id} className="rounded-md border border-white/60 bg-white/55 px-3 py-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-sm font-semibold">
-                    {w.profiles?.display_name || "Member"}
+                    {w.profiles?.display_name || w.display_name || "Guest"}
                     {w.hidden ? " (hidden)" : ""}
                   </span>
                   <div className="flex gap-2">

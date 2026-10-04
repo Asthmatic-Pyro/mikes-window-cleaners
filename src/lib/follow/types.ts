@@ -55,7 +55,8 @@ export type Post = {
 
 export type WallPost = {
   id: string;
-  author_id: string;
+  author_id: string | null;
+  display_name?: string | null;
   body: string;
   hidden: boolean;
   parent_id?: string | null;
@@ -160,12 +161,13 @@ export type Database = {
       };
       wall_posts: {
         Row: WallPost;
-        Insert: Omit<WallPost, "id" | "created_at" | "hidden" | "profiles" | "parent_id" | "thread_root_id"> & {
+        Insert: Omit<WallPost, "id" | "created_at" | "hidden" | "profiles" | "parent_id" | "thread_root_id" | "display_name"> & {
           id?: string;
           created_at?: string;
           hidden?: boolean;
           parent_id?: string | null;
           thread_root_id?: string | null;
+          display_name?: string | null;
         };
         Update: Partial<WallPost>;
         Relationships: [];

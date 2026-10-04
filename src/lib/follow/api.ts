@@ -504,6 +504,29 @@ export async function notifyFollowers(eventType: "post" | "location", eventKey: 
   return res.json();
 }
 
+export async function requestRouteOutreach(
+  here: { label: string; lat: number; lng: number },
+  ahead: { label: string; lat: number; lng: number }[],
+) {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error("Not signed in.");
+
+  const res = await fetch("/api/route-outreach", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ here, ahead }),
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error || "Could not email shops on this route.");
+  }
+  return res.json();
+}
+
 /** Geocode a city/area label to coordinates via OpenStreetMap Nominatim (city-level). */
 export async function geocodeCity(query: string): Promise<{ lat: number; lng: number; label: string } | null> {
   const q = query.trim();
