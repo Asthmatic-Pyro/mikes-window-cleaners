@@ -22,7 +22,7 @@ export default function ImageStrip() {
     <section aria-label="Storefront and glass work" className="relative overflow-hidden">
       <div className="grid grid-cols-2 md:grid-cols-4">
         {images.map((image, i) => (
-          <div key={image.src} className="relative aspect-[4/5] overflow-hidden md:aspect-[3/4]">
+          <div key={image.src} className="photo-sheen relative aspect-[4/5] overflow-hidden md:aspect-[3/4]">
             <img
               src={image.src}
               alt={image.alt}
@@ -34,7 +34,7 @@ export default function ImageStrip() {
               className="pointer-events-none absolute inset-0"
               style={{
                 background:
-                  "linear-gradient(180deg, transparent 55%, hsl(210 40% 8% / 0.35) 100%)",
+                  "linear-gradient(180deg, transparent 55%, hsl(286 36% 9% / 0.35) 100%)",
               }}
             />
           </div>
@@ -43,7 +43,7 @@ export default function ImageStrip() {
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-center px-4 pb-8 pt-24 md:pb-10"
         style={{
-          background: "linear-gradient(180deg, transparent 0%, hsl(210 40% 8% / 0.55) 100%)",
+          background: "linear-gradient(180deg, transparent 0%, hsl(286 36% 9% / 0.55) 100%)",
         }}
       >
         <p className="max-w-xl text-center font-display text-lg font-semibold tracking-tight text-white sm:text-xl md:text-2xl">

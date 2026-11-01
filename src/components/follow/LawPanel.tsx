@@ -8,6 +8,14 @@ import {
   type LawFact,
   type LawTopic,
 } from "@/data/stateLaws";
+import {
+  VEHICLE_TOPICS,
+  choicesForVehicleTopic,
+  defaultStopNote,
+  stopLaw,
+  vehicleLawsForState,
+  type VehicleTopic,
+} from "@/data/vehicleLaws";
 
 type LawPanelProps = {
   state: string;
@@ -16,16 +24,25 @@ type LawPanelProps = {
   onStamp?: (states: string[]) => void;
 };
 
+type PanelTopic = LawTopic | VehicleTopic;
+
+const PANEL_TOPICS: { id: PanelTopic; label: string }[] = [...LAW_TOPICS, ...VEHICLE_TOPICS];
+
 export default function LawPanel({ state, placeLabel, onClose, onStamp }: LawPanelProps) {
-  const rows = lawsForState(state);
-  const [topic, setTopic] = useState<LawTopic | null>(null);
-  const [passed, setPassed] = useState<LawTopic[]>([]);
-  const [picked, setPicked] = useState<LawFact | null>(null);
+  const rows = [...lawsForState(state), ...vehicleLawsForState(state)];
+  const place = stopLaw(placeLabel);
+  const [topic, setTopic] = useState<PanelTopic | null>(null);
+  const [passed, setPassed] = useState<PanelTopic[]>([]);
+  const [picked, setPicked] = useState<LawFact | string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [stamps, setStamps] = useState<string[]>(() => getLawStamps());
 
   const selected = rows.find((r) => r.topic === topic);
-  const choices = useMemo(() => (topic ? choicesForTopic(topic) : []), [topic]);
+  const choices = useMemo(() => {
+    if (!topic) return [];
+    if (topic === "vehicle" || topic === "camping" || topic === "fine") return choicesForVehicleTopic(topic);
+    return choicesForTopic(topic);
+  }, [topic]);
 
   useEffect(() => {
     setTopic(null);
@@ -34,14 +51,14 @@ export default function LawPanel({ state, placeLabel, onClose, onStamp }: LawPan
     setFeedback(null);
   }, [state]);
 
-  const checkAnswer = (choice: LawFact) => {
+  const checkAnswer = (choice: LawFact | string) => {
     if (!selected || !topic) return;
     setPicked(choice);
     if (choice === selected.fact) {
       const next = passed.includes(topic) ? passed : [...passed, topic];
       setPassed(next);
       setFeedback("Correct — statute matched.");
-      if (next.length === 3) {
+      if (next.length === PANEL_TOPICS.length) {
         const stamped = addLawStamp(state);
         setStamps(stamped);
         onStamp?.(stamped);
@@ -69,11 +86,40 @@ export default function LawPanel({ state, placeLabel, onClose, onStamp }: LawPan
         <p className="mt-3 text-sm text-muted-foreground">No curated statute yet for this state.</p>
       ) : (
         <>
+          {place ? (
+            <div className="mt-3 space-y-2 rounded-md bg-secondary/80 p-3 text-sm">
+              <p className="font-semibold">This stop</p>
+              <p>
+                <span className="font-medium">Sleeping in a car. </span>
+                {place.vehicle}
+              </p>
+              <p>
+                <span className="font-medium">Public camping. </span>
+                {place.camping}
+              </p>
+              <p>
+                <span className="font-medium">Fine. </span>
+                {place.fine}
+              </p>
+              <a
+                href={place.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-primary underline-offset-2 hover:underline"
+              >
+                {place.citation}
+              </a>
+            </div>
+          ) : placeLabel ? (
+            <p className="mt-3 rounded-md bg-secondary/80 px-3 py-2 text-sm">{defaultStopNote(placeLabel, state)}</p>
+          ) : null}
           <p className="mt-2 text-sm text-muted-foreground">
-            Read each cited blurb, then answer the quiz. Three correct topics stamps this state.
+            Read each cited blurb, then answer the quiz. {PANEL_TOPICS.length} correct topics stamps this state.
+            The U.S. Supreme Court in Grants Pass v. Johnson, 603 U.S. 520 (2024), held that the Eighth Amendment
+            does not bar a city from enforcing a generally applicable camping rule against a person who is homeless.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {LAW_TOPICS.map((t) => (
+            {PANEL_TOPICS.map((t) => (
               <button
                 key={t.id}
                 type="button"
@@ -137,9 +183,9 @@ export default function LawPanel({ state, placeLabel, onClose, onStamp }: LawPan
               )}
             </div>
           )}
-          {passed.length === 3 && (
+          {passed.length === PANEL_TOPICS.length && (
             <p className="mt-3 text-sm font-semibold text-primary">
-              Stamp earned: researched all three topics for {state}.
+              Stamp earned: researched all {PANEL_TOPICS.length} topics for {state}.
             </p>
           )}
           {stamps.length > 0 && (

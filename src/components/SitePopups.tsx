@@ -1,8 +1,9 @@
 import { Building2, Check, MapPin, Phone, X } from "lucide-react";
 import Modal from "@/components/Modal";
 import QuoteForm from "@/components/QuoteForm";
+import TripUpdatesForm from "@/components/TripUpdatesForm";
 
-export type PopupId = "why" | "services" | "about" | "quote";
+export type PopupId = "why" | "services" | "about" | "quote" | "updates";
 
 type SitePopupsProps = {
   active: PopupId | null;
@@ -151,6 +152,10 @@ export default function SitePopups({ active, onClose, onOpenQuote }: SitePopupsP
           same day.
         </p>
         <QuoteForm idPrefix="popup-quote" />
+      </Modal>
+
+      <Modal open={active === "updates"} title="Where is Mike — and when does he move?" onClose={onClose}>
+        <TripUpdatesForm idPrefix="nav-trip" />
       </Modal>
     </>
   );

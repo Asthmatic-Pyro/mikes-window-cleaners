@@ -16,7 +16,7 @@ export default function AboutSection({ onLearnMore, onGetQuote }: AboutSectionPr
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(105deg, hsl(210 45% 5% / 0.82) 0%, hsl(210 40% 8% / 0.58) 42%, hsl(210 35% 12% / 0.3) 100%)",
+              "linear-gradient(105deg, hsl(286 45% 5% / 0.82) 0%, hsl(286 40% 8% / 0.58) 42%, hsl(286 35% 12% / 0.3) 100%)",
           }}
         />
       </div>

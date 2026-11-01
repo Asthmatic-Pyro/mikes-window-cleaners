@@ -3,6 +3,9 @@ import { Link, Navigate } from "react-router-dom";
 import FollowHeader from "@/components/follow/FollowHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import {
+  claimImageUrl,
+  claimNoteText,
+  createApprovedNameClaim,
   createPost,
   deleteDestination,
   deletePost,
@@ -19,22 +22,30 @@ import {
   hideWallPost,
   notifyFollowers,
   requestRouteOutreach,
+  decideRouteOutreach,
+  type RouteEmailAction,
+  type RouteEmailRun,
   publishPublicLocation,
   reviewNameClaim,
   reviewTestimonial,
   deleteTestimonial,
   deleteNameClaim,
   describeFollowError,
+  setNameClaimImage,
   updateLocation,
   updatePost,
   updateSettings,
   upsertDestination,
+  getGiveawayStatus,
+  drawGiveawayWinner,
+  type GiveawayEntry,
 } from "@/lib/follow/api";
 import type {
   Destination,
   DestinationStatus,
   LocationCurrent,
   NameClaim,
+  NameTier,
   Post,
   SiteSettings,
   Testimonial,
@@ -42,11 +53,20 @@ import type {
   EventLog,
 } from "@/lib/follow/types";
 import { matchDestination } from "@/lib/follow/matchStop";
+import RouteEmailPanel from "@/components/follow/RouteEmailPanel";
 import ImageCropModal from "@/components/follow/ImageCropModal";
 import StarRating from "@/components/StarRating";
 import { testimonialRating } from "@/lib/follow/rating";
 
-type Tab = "location" | "destinations" | "posts" | "wall" | "claims" | "reviews" | "settings" | "log";
+type Tab = "location" | "destinations" | "posts" | "wall" | "claims" | "reviews" | "settings" | "giveaway" | "log";
+
+function aheadStops(list: Destination[]) {
+  return list
+    .filter((d) => d.status === "upcoming" && d.lat != null && d.lng != null)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .slice(0, 2)
+    .map((d) => ({ label: d.city_label || d.name, lat: d.lat as number, lng: d.lng as number }));
+}
 
 function milesApart(lat1: number, lng1: number, lat2: number, lng2: number) {
   const toRad = (deg: number) => (deg * Math.PI) / 180;
@@ -76,13 +96,24 @@ export default function FollowAdmin() {
 
   const [destName, setDestName] = useState("");
   const [destStatus, setDestStatus] = useState<DestinationStatus>("upcoming");
+  const [routeRun, setRouteRun] = useState<RouteEmailRun | null>(null);
+  const [routeBusy, setRouteBusy] = useState(false);
 
   const [postTitle, setPostTitle] = useState("");
   const [postBody, setPostBody] = useState("");
   const [postFile, setPostFile] = useState<File | null>(null);
   const [cropFile, setCropFile] = useState<File | null>(null);
+  const [cropTarget, setCropTarget] = useState<"post" | "claim" | { id: string }>("post");
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [savingPost, setSavingPost] = useState(false);
+  const [claimName, setClaimName] = useState("");
+  const [claimAmount, setClaimAmount] = useState("10");
+  const [claimPlace, setClaimPlace] = useState<NameTier>("car");
+  const [claimFile, setClaimFile] = useState<File | null>(null);
+  const [savingClaim, setSavingClaim] = useState(false);
+  const [claimPhotoBusy, setClaimPhotoBusy] = useState<string | null>(null);
+  const [giveawayEntries, setGiveawayEntries] = useState<GiveawayEntry[]>([]);
+  const [giveawayBusy, setGiveawayBusy] = useState(false);
 
   const load = useCallback(async () => {
     const settled = await Promise.allSettled([
@@ -111,6 +142,25 @@ export default function FollowAdmin() {
     setReviews((prev) => value(5, prev));
     setSettings((prev) => value(6, prev));
     setEventLogs((prev) => value(7, prev));
+    try {
+      const giveaway = await getGiveawayStatus();
+      setGiveawayEntries(giveaway.entries ?? []);
+      if (giveaway.settings) {
+        setSettings((prev) =>
+          prev
+            ? {
+                ...prev,
+                giveaway_ends_at: giveaway.settings?.giveaway_ends_at ?? prev.giveaway_ends_at ?? "2026-12-31",
+                giveaway_winner_email: giveaway.settings?.giveaway_winner_email ?? prev.giveaway_winner_email ?? "",
+                giveaway_winner_name: giveaway.settings?.giveaway_winner_name ?? prev.giveaway_winner_name ?? "",
+                giveaway_drawn_at: giveaway.settings?.giveaway_drawn_at ?? prev.giveaway_drawn_at ?? null,
+              }
+            : prev,
+        );
+      }
+    } catch {
+      setGiveawayEntries([]);
+    }
   }, []);
 
   useEffect(() => {
@@ -174,16 +224,69 @@ export default function FollowAdmin() {
         prev && Number.isFinite(prev.lat) && Number.isFinite(prev.lng)
           ? milesApart(prev.lat, prev.lng, geo.lat, geo.lng)
           : Number.POSITIVE_INFINITY;
-      if (!(citySame && moved < 15)) {
-        const ahead = dests
-          .filter((d) => d.status === "upcoming" && d.lat != null && d.lng != null)
-          .sort((a, b) => a.sort_order - b.sort_order)
-          .slice(0, 2)
-          .map((d) => ({ label: d.city_label || d.name, lat: d.lat as number, lng: d.lng as number }));
-        void requestRouteOutreach({ label, lat: geo.lat, lng: geo.lng }, ahead).catch(() => undefined);
+      if (citySame && moved < 15) return;
+      try {
+        const run = await requestRouteOutreach({ label, lat: geo.lat, lng: geo.lng }, aheadStops(dests));
+        setRouteRun(run);
+        if (run.skipped) {
+          flash("Map updated. Route email is not configured.");
+        } else if (!run.run_id) {
+          flash(run.note || "Map updated. No new shops to email.");
+        } else {
+          flash(
+            run.telegram_sent
+              ? "Map updated. Approve the example on Telegram, then the shop list. Nothing sends before that."
+              : "Map updated. Approve the example below, then the shop list. Nothing sends before that.",
+          );
+        }
+      } catch (err) {
+        setMessage("Map updated.");
+        setError(describeFollowError(err, "The map saved, but the route email sweep failed."));
       }
     } catch (err) {
       setError(describeFollowError(err, "Failed to update location"));
+    }
+  };
+
+  const onSimulateRoute = async () => {
+    setRouteBusy(true);
+    try {
+      const geo = await geocodeCity(cityInput);
+      if (!geo) throw new Error("Could not find that city/area. Try a clearer name.");
+      const label = cityInput.trim() || geo.label;
+      const run = await requestRouteOutreach(
+        { label, lat: geo.lat, lng: geo.lng },
+        aheadStops(destinations),
+        { simulate: true },
+      );
+      setRouteRun(run);
+      if (run.skipped) {
+        flash("Route email is not configured.");
+      } else {
+        flash(
+          run.telegram_sent
+            ? "Simulation is on Telegram. Sample shops only. The last step still will not email anyone."
+            : "Simulation is ready below. Sample shops only. The last step still will not email anyone.",
+        );
+      }
+    } catch (err) {
+      setError(describeFollowError(err, "Could not start the route email simulation"));
+    } finally {
+      setRouteBusy(false);
+    }
+  };
+
+  const onRouteDecision = async (action: RouteEmailAction) => {
+    if (!routeRun?.run_id) return;
+    setRouteBusy(true);
+    try {
+      const run = await decideRouteOutreach(routeRun.run_id, action);
+      setRouteRun(run);
+      flash(run.note || "Route email updated.");
+    } catch (err) {
+      setError(describeFollowError(err, "Could not update the route email"));
+    } finally {
+      setRouteBusy(false);
     }
   };
 
@@ -277,6 +380,57 @@ export default function FollowAdmin() {
     }
   };
 
+  const onAddClaim = async (e: FormEvent) => {
+    e.preventDefault();
+    if (savingClaim) return;
+    const amount = Number(claimAmount);
+    if (!claimName.trim()) {
+      setError("Enter the name to put on the car.");
+      return;
+    }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setError("Enter a valid amount.");
+      return;
+    }
+    if (claimPlace === "windshield" && amount < 100) {
+      setError("Windshield starts at $100.");
+      return;
+    }
+    setSavingClaim(true);
+    setError(null);
+    try {
+      await createApprovedNameClaim({
+        display_name: claimName.trim(),
+        amount,
+        tier: claimPlace,
+        image: claimFile,
+      });
+      setClaimName("");
+      setClaimAmount(amount >= 100 ? "100" : "10");
+      setClaimFile(null);
+      await load();
+      flash("Name added.");
+    } catch (err) {
+      setError(describeFollowError(err, "Failed to add that name."));
+    } finally {
+      setSavingClaim(false);
+    }
+  };
+
+  const onClaimPhoto = async (id: string, file: File) => {
+    setClaimPhotoBusy(id);
+    setError(null);
+    try {
+      await setNameClaimImage(id, file);
+      await load();
+      flash("Photo saved.");
+    } catch (err) {
+      setError(describeFollowError(err, "Failed to save that photo."));
+    } finally {
+      setClaimPhotoBusy(null);
+    }
+  };
+
   const onSaveSettings = async (e: FormEvent) => {
     e.preventDefault();
     if (!settings) return;
@@ -289,10 +443,28 @@ export default function FollowAdmin() {
     }
   };
 
+  const onDrawGiveaway = async () => {
+    setGiveawayBusy(true);
+    try {
+      const result = await drawGiveawayWinner();
+      await load();
+      if (result.emailError) {
+        flash(`Winner: ${result.winner?.name || result.winner?.email}. Email failed: ${result.emailError}`);
+      } else {
+        flash(`Winner drawn: ${result.winner?.name || result.winner?.email}`);
+      }
+    } catch (err) {
+      setError(describeFollowError(err, "Could not draw a winner"));
+    } finally {
+      setGiveawayBusy(false);
+    }
+  };
+
   const tabs: { id: Tab; label: string }[] = [
     { id: "location", label: "Where I am" },
     { id: "destinations", label: "Route stops" },
     { id: "posts", label: "Road notes" },
+    { id: "giveaway", label: "Giveaway" },
     { id: "settings", label: "Support links" },
     { id: "claims", label: "Car names" },
     { id: "reviews", label: "Reviews" },
@@ -336,6 +508,7 @@ export default function FollowAdmin() {
           <form onSubmit={(e) => void onSaveLocation(e)} className="space-y-3 rounded-md border border-white/60 bg-white/55 p-4">
             <p className="text-sm text-muted-foreground">
               City / area only — saved to the public map immediately. If it matches a route stop, that stop becomes current.
+              A new city, or a move of about 15 miles, gathers nearby shops and waits for two approvals: the example email, then the shop list. Nothing is emailed before both.
             </p>
             <label className="block space-y-1">
               <span className="text-sm font-medium">City or area</span>
@@ -352,10 +525,19 @@ export default function FollowAdmin() {
                 Current: {location.city_label} ({location.lat.toFixed(3)}, {location.lng.toFixed(3)})
               </p>
             )}
-            <button type="submit" className="btn-primary text-sm">
-              Save location (updates map now)
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button type="submit" className="btn-primary text-sm">
+                Save location (updates map now)
+              </button>
+              <button type="button" className="btn-secondary text-sm" disabled={routeBusy} onClick={() => void onSimulateRoute()}>
+                Simulate route email
+              </button>
+            </div>
           </form>
+        )}
+
+        {tab === "location" && routeRun && (
+          <RouteEmailPanel run={routeRun} busy={routeBusy} onDecide={(action) => void onRouteDecision(action)} />
         )}
 
         {tab === "destinations" && (
@@ -596,53 +778,168 @@ export default function FollowAdmin() {
         )}
 
         {tab === "claims" && (
-          <ul className="space-y-2">
-            {claims.map((c) => (
-              <li key={c.id} className="rounded-md border border-white/60 bg-white/55 px-3 py-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="font-semibold">
-                      {c.display_name} — ${Number(c.amount).toFixed(2)} ({c.tier})
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {c.profiles?.email || c.user_id} · {c.status}
-                      {c.payment_note ? ` · ${c.payment_note}` : ""}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    {c.status === "pending" && (
-                      <>
-                        <button
-                          type="button"
-                          className="btn-primary py-1.5 text-xs"
-                          onClick={() => void reviewNameClaim(c.id, "approved").then(load)}
-                        >
-                          Approve
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-secondary py-1.5 text-xs"
-                          onClick={() => void reviewNameClaim(c.id, "rejected").then(load)}
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
-                    <button
-                      type="button"
-                      className="btn-secondary py-1.5 text-xs"
-                      onClick={() => {
-                        if (!window.confirm(`Delete the request for “${c.display_name}”?`)) return;
-                        void deleteNameClaim(c.id).then(load);
-                      }}
-                    >
+          <div className="space-y-4">
+            <form
+              onSubmit={(e) => void onAddClaim(e)}
+              className="space-y-3 rounded-md border border-white/60 bg-white/55 p-4"
+            >
+              <h2 className="font-display text-lg font-bold">Add a name</h2>
+              <label className="block space-y-1">
+                <span className="text-sm font-medium">Name on the car</span>
+                <input
+                  className="field-input"
+                  value={claimName}
+                  onChange={(e) => setClaimName(e.target.value)}
+                  maxLength={40}
+                  placeholder="How it should appear"
+                  required
+                />
+              </label>
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium">Window</legend>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setClaimPlace("car")}
+                    className={`rounded-md border px-3 py-1.5 text-sm font-semibold ${
+                      claimPlace === "car" ? "border-primary bg-primary text-primary-foreground" : "border-border/80 bg-white/80"
+                    }`}
+                  >
+                    Hatch window
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setClaimPlace("windshield");
+                      if (Number(claimAmount) < 100) setClaimAmount("100");
+                    }}
+                    className={`rounded-md border px-3 py-1.5 text-sm font-semibold ${
+                      claimPlace === "windshield"
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border/80 bg-white/80"
+                    }`}
+                  >
+                    Windshield
+                  </button>
+                </div>
+              </fieldset>
+              <label className="block space-y-1">
+                <span className="text-sm font-medium">Amount</span>
+                <input
+                  className="field-input max-w-[12rem]"
+                  type="number"
+                  min="1"
+                  step="0.01"
+                  value={claimAmount}
+                  onChange={(e) => setClaimAmount(e.target.value)}
+                  required
+                />
+                <span className="block text-xs text-muted-foreground">
+                  Windshield starts at $100. The hatch window can be any amount.
+                </span>
+              </label>
+              <label className="block space-y-1">
+                <span className="text-sm font-medium">Photo (optional)</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/*"
+                  onChange={(e) => {
+                    const next = e.target.files?.[0] ?? null;
+                    e.target.value = "";
+                    if (next) {
+                      setCropTarget("claim");
+                      setCropFile(next);
+                    }
+                  }}
+                />
+                <span className="block text-xs text-muted-foreground">
+                  Shown next to the name on the Follow page.
+                </span>
+                {claimFile && <p className="text-xs text-primary">Cropped photo ready.</p>}
+              </label>
+              <button type="submit" className="btn-primary text-sm" disabled={savingClaim}>
+                {savingClaim ? "Adding…" : "Add name"}
+              </button>
+            </form>
+            {claims.length === 0 && <p className="text-sm text-muted-foreground">No names yet.</p>}
+            <ul className="space-y-2">
+              {claims.map((c) => {
+                const photo = claimImageUrl(c);
+                const note = claimNoteText(c.payment_note);
+                return (
+                <li key={c.id} className="rounded-md border border-white/60 bg-white/55 px-3 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-3">
+                      {photo && (
+                        <img
+                          src={photo}
+                          alt=""
+                          className="h-14 w-20 shrink-0 rounded object-cover"
+                        />
+                      )}
+                      <div className="min-w-0">
+                        <p className="font-semibold">
+                          {c.display_name} — ${Number(c.amount).toFixed(2)} ({c.tier === "windshield" ? "windshield" : "hatch window"})
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {c.profiles?.email || c.user_id || "Guest"} · {c.status}
+                          {note ? ` · ${note}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <label className="btn-secondary cursor-pointer py-1.5 text-xs">
+                        {claimPhotoBusy === c.id ? "Saving photo…" : photo ? "Replace photo" : "Add photo"}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/*"
+                          className="sr-only"
+                          disabled={claimPhotoBusy === c.id}
+                          onChange={(e) => {
+                            const next = e.target.files?.[0] ?? null;
+                            e.target.value = "";
+                            if (next) {
+                              setCropTarget({ id: c.id });
+                              setCropFile(next);
+                            }
+                          }}
+                        />
+                      </label>
+                      {c.status === "pending" && (
+                        <>
+                          <button
+                            type="button"
+                            className="btn-primary py-1.5 text-xs"
+                            onClick={() => void reviewNameClaim(c.id, "approved").then(load)}
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-secondary py-1.5 text-xs"
+                            onClick={() => void reviewNameClaim(c.id, "rejected").then(load)}
+                          >
+                            Decline
+                          </button>
+                        </>
+                      )}
+                      <button
+                        type="button"
+                        className="btn-secondary py-1.5 text-xs"
+                        onClick={() => {
+                          if (!window.confirm(`Delete the request for “${c.display_name}”?`)) return;
+                          void deleteNameClaim(c.id).then(load);
+                        }}
+                      >
                       Delete
                     </button>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+                  </div>
+                </li>
+                );
+              })}
+            </ul>
+          </div>
         )}
 
         {tab === "log" && (
@@ -740,10 +1037,59 @@ export default function FollowAdmin() {
                 onChange={(e) => setSettings({ ...settings, mailbox_notes: e.target.value })}
               />
             </label>
+            <label className="block space-y-1">
+              <span className="text-sm font-medium">Giveaway end date</span>
+              <input
+                className="field-input"
+                type="date"
+                value={settings.giveaway_ends_at || "2026-12-31"}
+                onChange={(e) => setSettings({ ...settings, giveaway_ends_at: e.target.value })}
+              />
+            </label>
             <button type="submit" className="btn-primary text-sm">
               Save support links
             </button>
           </form>
+        )}
+
+        {tab === "giveaway" && (
+          <section className="space-y-4 rounded-md border border-white/60 bg-white/55 p-4">
+            <div>
+              <h2 className="font-display text-xl font-bold">Name on the Metro giveaway</h2>
+              <p className="text-sm text-muted-foreground">
+                Entries are confirmed trip emails plus approved name-on-car tips. One entry per email. Drawing closes{" "}
+                {settings?.giveaway_ends_at || "2026-12-31"}.
+              </p>
+            </div>
+            {settings?.giveaway_winner_email ? (
+              <p className="rounded-md border border-primary/25 bg-primary/5 px-3 py-2 text-sm text-primary">
+                Winner: {settings.giveaway_winner_name || settings.giveaway_winner_email}
+                {settings.giveaway_drawn_at
+                  ? ` · drawn ${new Date(settings.giveaway_drawn_at).toLocaleString()}`
+                  : ""}
+              </p>
+            ) : (
+              <button
+                type="button"
+                className="btn-primary text-sm"
+                disabled={giveawayBusy || giveawayEntries.length === 0}
+                onClick={() => void onDrawGiveaway()}
+              >
+                {giveawayBusy ? "Drawing…" : `Draw winner (${giveawayEntries.length} entries)`}
+              </button>
+            )}
+            <ul className="max-h-80 space-y-1 overflow-y-auto text-sm">
+              {giveawayEntries.length === 0 && (
+                <li className="text-muted-foreground">No confirmed entries yet.</li>
+              )}
+              {giveawayEntries.map((entry) => (
+                <li key={entry.email}>
+                  <span className="font-medium">{entry.name || "—"}</span>
+                  <span className="text-muted-foreground"> · {entry.email}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
       </main>
       {cropFile && (
@@ -751,7 +1097,9 @@ export default function FollowAdmin() {
           file={cropFile}
           onCancel={() => setCropFile(null)}
           onConfirm={(file) => {
-            setPostFile(file);
+            if (cropTarget === "claim") setClaimFile(file);
+            else if (typeof cropTarget === "object") void onClaimPhoto(cropTarget.id, file);
+            else setPostFile(file);
             setCropFile(null);
           }}
         />

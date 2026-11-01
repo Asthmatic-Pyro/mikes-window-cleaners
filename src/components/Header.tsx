@@ -9,6 +9,7 @@ interface HeaderProps {
 }
 
 const navItems: { id: PopupId; label: string }[] = [
+  { id: "updates", label: "Trip updates" },
   { id: "why", label: "Why Clean" },
   { id: "services", label: "Services" },
   { id: "about", label: "About Mike" },
@@ -24,7 +25,7 @@ export default function Header({ onGetQuote, onOpen }: HeaderProps) {
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/50 bg-white/65 shadow-[0_8px_30px_-18px_rgba(20,50,90,0.35)] backdrop-blur-xl">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/50 bg-white/65 shadow-[0_8px_30px_-18px_rgba(60,20,90,0.35)] backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <a href="#top" className="group flex items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-wash text-white shadow-sm shadow-primary/30">

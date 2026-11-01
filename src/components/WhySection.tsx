@@ -46,10 +46,10 @@ export default function WhySection({ onLearnMore, onGetQuote }: WhySectionProps)
           </div>
         </Reveal>
 
-        <div className="grid gap-x-12 gap-y-10 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
           {points.map((point, i) => (
-            <Reveal key={point.title} delayMs={i * 70}>
-              <div className="flex gap-4">
+            <Reveal key={point.title} delayMs={i * 70} className="h-full">
+              <div className="invite-card flex h-full gap-4 p-5">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-wash text-white shadow-sm shadow-primary/25">
                   <point.icon className="h-5 w-5" />
                 </div>

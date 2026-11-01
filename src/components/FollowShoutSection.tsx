@@ -17,8 +17,8 @@ function StaticShout() {
       </h2>
       <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white/88">
         Mike&apos;s rolling Cincinnati to Seattle the long way in the little car — live map, weather, road notes.
-        Tip any amount and your actual name goes on the Metro. Not a username. Your name. On the car. $100+ takes
-        the windshield.
+        Tip any amount and your actual name goes on the hatch window. $100 or more can take the windshield. Not a
+        username. Your name.
       </p>
       <div className="mt-8 flex flex-wrap items-center gap-4">
         <Link to="/Follow" className="btn-primary bg-white text-primary hover:bg-white">
@@ -65,15 +65,13 @@ export default function FollowShoutSection() {
   const showPreview = Boolean(location) && !failed;
 
   return (
-    <section className="relative overflow-hidden bg-wash text-white">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-25"
-        style={{
-          background:
-            "radial-gradient(ellipse 70% 80% at 90% -10%, hsl(0 0% 100% / 0.55), transparent 55%)",
-        }}
-      />
-      <div className="section-pad relative mx-auto max-w-6xl">
+    <section className="relative overflow-hidden text-white">
+      <div className="follow-shout-base pointer-events-none absolute inset-0" />
+      <div className="follow-shout-clouds pointer-events-none absolute inset-0" />
+      <div className="follow-shout-weave pointer-events-none absolute inset-0" />
+      <div className="follow-shout-grain pointer-events-none absolute inset-0" />
+      <div className="follow-shout-sheen pointer-events-none absolute inset-0" />
+      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-14 pt-36 md:pb-20 md:pt-40 lg:pt-32">
         {showPreview && location ? (
           <Reveal>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/70">Follow Mike</p>

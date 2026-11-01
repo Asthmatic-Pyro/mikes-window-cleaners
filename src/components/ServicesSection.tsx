@@ -36,7 +36,7 @@ export default function ServicesSection({ onLearnMore, onGetQuote }: ServicesSec
         className="pointer-events-none absolute inset-0 opacity-70"
         style={{
           background:
-            "radial-gradient(ellipse at 85% 15%, hsl(210 70% 78% / 0.4), transparent 48%), radial-gradient(ellipse at 8% 85%, hsl(205 55% 72% / 0.28), transparent 42%)",
+            "radial-gradient(ellipse at 85% 15%, hsl(286 42% 78% / 0.4), transparent 48%), radial-gradient(ellipse at 8% 85%, hsl(300 36% 72% / 0.28), transparent 42%)",
         }}
       />
       <div className="relative mx-auto max-w-6xl">
@@ -52,10 +52,10 @@ export default function ServicesSection({ onLearnMore, onGetQuote }: ServicesSec
           </div>
         </Reveal>
 
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
           {services.map((service, i) => (
-            <Reveal key={service.title} delayMs={i * 60}>
-              <div className="border-t-2 border-primary/35 pt-6">
+            <Reveal key={service.title} delayMs={i * 60} className="h-full">
+              <div className="invite-card h-full p-5">
                 <service.icon className="mb-4 h-8 w-8 text-primary" strokeWidth={1.55} />
                 <h3 className="font-display text-lg font-semibold text-foreground">{service.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{service.description}</p>

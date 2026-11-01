@@ -93,17 +93,18 @@ create index if not exists reactions_target_idx on public.reactions (target_type
 -- Name-on-car claims
 create table if not exists public.name_claims (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.profiles (id) on delete cascade,
+  user_id uuid references public.profiles (id) on delete cascade,
   display_name text not null,
   amount numeric(10, 2) not null check (amount > 0),
   tier text not null check (tier in ('car', 'windshield')),
   payment_note text,
+  image_url text,
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
   created_at timestamptz not null default now(),
   reviewed_at timestamptz
 );
 
--- Site settings (support links + mailbox copy)
+-- Site settings (support links + mailbox copy + giveaway)
 create table if not exists public.site_settings (
   id int primary key default 1 check (id = 1),
   streamelements_url text not null default '',
@@ -115,12 +116,37 @@ create table if not exists public.site_settings (
   amazon_wishlist_url text not null default '',
   mailbox_address text not null default '',
   mailbox_notes text not null default '',
+  giveaway_ends_at date not null default '2026-12-31',
+  giveaway_winner_email text not null default '',
+  giveaway_winner_name text not null default '',
+  giveaway_drawn_at timestamptz,
   updated_at timestamptz not null default now()
 );
 
 insert into public.site_settings (id)
 values (1)
 on conflict (id) do nothing;
+
+-- Trip email updates (confirm-only; API writes with service role)
+create table if not exists public.trip_subscribers (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  display_name text not null default '',
+  status text not null default 'pending'
+    check (status in ('pending', 'confirmed', 'unsubscribed')),
+  confirm_token text not null unique,
+  unsubscribe_token text not null unique,
+  confirmed_at timestamptz,
+  unsubscribed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create unique index if not exists trip_subscribers_email_idx
+  on public.trip_subscribers (lower(email));
+
+create index if not exists trip_subscribers_status_idx
+  on public.trip_subscribers (status);
 
 -- Notification dedupe log
 create table if not exists public.notification_log (
@@ -199,12 +225,15 @@ create trigger posts_updated_at
   before update on public.posts
   for each row execute function public.set_updated_at();
 
--- Auto tier from amount on insert/update if client sends wrong tier
+-- Keep an explicit windshield or hatch choice. Fill tier only when it was left blank.
 create or replace function public.name_claim_set_tier()
 returns trigger
 language plpgsql
 as $$
 begin
+  if new.tier in ('car', 'windshield') then
+    return new;
+  end if;
   if new.amount >= 100 then
     new.tier := 'windshield';
   else
@@ -218,6 +247,31 @@ drop trigger if exists name_claims_tier on public.name_claims;
 create trigger name_claims_tier
   before insert or update of amount on public.name_claims
   for each row execute function public.name_claim_set_tier();
+
+-- Supporters may request a name. Only an admin or the server can store a photo.
+create or replace function public.name_claim_admin_photos()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if coalesce(auth.role(), '') = 'service_role' or public.is_admin() then
+    return new;
+  end if;
+  new.image_url := null;
+  new.payment_note := nullif(
+    btrim(regexp_replace(coalesce(new.payment_note, ''), '(^|\n)image:https?://\S+', '', 'g')),
+    ''
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists name_claims_admin_photos on public.name_claims;
+create trigger name_claims_admin_photos
+  before insert or update of image_url, payment_note on public.name_claims
+  for each row execute function public.name_claim_admin_photos();
 
 -- Prevent non-admins from changing their own role
 create or replace function public.protect_profile_role()
@@ -248,6 +302,7 @@ alter table public.wall_posts enable row level security;
 alter table public.reactions enable row level security;
 alter table public.name_claims enable row level security;
 alter table public.site_settings enable row level security;
+alter table public.trip_subscribers enable row level security;
 alter table public.notification_log enable row level security;
 
 -- Profiles
@@ -354,6 +409,11 @@ create policy "Admins update claims"
 create policy "Members or admins delete claims"
   on public.name_claims for delete
   using (auth.uid() = user_id or public.is_admin());
+
+-- Trip subscribers (service role writes; admins can read)
+create policy "Admins read trip subscribers"
+  on public.trip_subscribers for select
+  using (public.is_admin());
 
 -- Settings
 create policy "Settings are public"

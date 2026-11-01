@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { env } from "./_lib/env.js";
+import { deliverNameAlert, nameAlertFromClaimId } from "./_lib/nameAlert.js";
 import { alertMike, type SiteEventType } from "./_lib/telegram.js";
 
 type Body = {
@@ -45,6 +46,17 @@ export async function POST(request: Request) {
   const summary = body.summary?.trim() ?? "";
   if (!eventType || !EVENT_TYPES.includes(eventType) || !summary) {
     return Response.json({ error: "eventType and summary are required." }, { status: 400 });
+  }
+
+  if (eventType === "name") {
+    const claimId = typeof body.payload?.id === "string" ? body.payload.id : "";
+    if (claimId) {
+      const loaded = await nameAlertFromClaimId(claimId);
+      if (loaded.kind === "ready") {
+        const result = await deliverNameAlert(loaded.input);
+        return Response.json({ ok: true, ...result });
+      }
+    }
   }
 
   await alertMike(eventType, summary, body.payload);

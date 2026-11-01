@@ -148,6 +148,9 @@ export default function FollowPage() {
                     <span className="h-2.5 w-2.5 rounded-full bg-[#2563eb]" /> Here
                   </span>
                   <span className="inline-flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#0891b2]" /> Current
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-full bg-[#16a34a]" /> Visited
                   </span>
                   <span className="inline-flex items-center gap-1.5">
@@ -159,11 +162,14 @@ export default function FollowPage() {
                 location={location}
                 destinations={destinations}
                 weather={weather}
-                className="h-[min(62vh,480px)] min-h-[300px]"
+                className="h-[min(80vh,640px)] min-h-[420px]"
+                selectedStop={lawStop?.label}
+                selectedState={lawStop?.state}
                 onSelectDestination={(d) => {
                   const state = stateFromLabel(d.city_label) || stateFromLabel(d.name);
                   if (state) setLawStop({ state, label: d.name });
                 }}
+                onSelectState={(code) => setLawStop({ state: code, label: "" })}
               />
             </div>
           )}
@@ -177,7 +183,7 @@ export default function FollowPage() {
             />
           )}
           <p className="text-xs text-muted-foreground">
-            Tap a stop for cannabis, recording, and firearms statutes. Read, quiz, earn a stamp. Not legal advice.
+            The map starts regular. Pick Audio, Cannabis, Firearms, or Camp / car and the colors load. Hover a state for the statute. Not legal advice.
           </p>
           {lawStamps.length > 0 && (
             <p className="text-sm font-medium text-primary">States researched: {lawStamps.join(" · ")}</p>

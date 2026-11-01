@@ -8,7 +8,7 @@ export default function QuoteSection() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse at 20% 0%, hsl(210 80% 70% / 0.22), transparent 45%), radial-gradient(ellipse at 90% 80%, hsl(205 70% 65% / 0.18), transparent 40%)",
+            "radial-gradient(ellipse at 20% 0%, hsl(286 48% 70% / 0.22), transparent 45%), radial-gradient(ellipse at 90% 80%, hsl(300 40% 65% / 0.18), transparent 40%)",
         }}
       />
       <div className="relative mx-auto max-w-6xl">
@@ -32,7 +32,7 @@ export default function QuoteSection() {
           </Reveal>
 
           <Reveal delayMs={80}>
-            <div className="rounded-xl border border-white/70 bg-white/70 p-6 shadow-[0_24px_60px_-28px_hsl(210_60%_40%/0.35)] backdrop-blur-md sm:p-8">
+            <div className="invite-card p-6 sm:p-8">
               <QuoteForm idPrefix="page-quote" />
             </div>
           </Reveal>

@@ -8,6 +8,7 @@ type FooterProps = {
 };
 
 const navItems: { id: PopupId; label: string }[] = [
+  { id: "updates", label: "Trip updates" },
   { id: "why", label: "Why Clean" },
   { id: "services", label: "Services" },
   { id: "about", label: "About Mike" },
@@ -16,7 +17,7 @@ const navItems: { id: PopupId; label: string }[] = [
 
 export default function Footer({ onOpen, onGetQuote }: FooterProps) {
   return (
-    <footer className="border-t border-border/40 bg-[hsl(210_40%_8%)] text-white">
+    <footer className="border-t border-border/40 bg-[hsl(286_36%_9%)] text-white">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-4 py-14 text-center">
         <p className="font-display text-2xl font-bold tracking-tight">Mike&apos;s Window Cleaners</p>
         <p className="max-w-md text-sm leading-relaxed text-white/60">

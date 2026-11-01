@@ -367,9 +367,10 @@ export async function submitNameClaim(input: {
   user_id: string;
   display_name: string;
   amount: number;
+  tier: "car" | "windshield";
   payment_note?: string;
 }) {
-  const tier = input.amount >= 100 ? "windshield" : "car";
+  const tier = input.tier === "windshield" ? "windshield" : "car";
   const { data, error } = await supabase
     .from("name_claims")
     .insert({
@@ -377,13 +378,64 @@ export async function submitNameClaim(input: {
       display_name: input.display_name.trim(),
       amount: input.amount,
       tier,
-      payment_note: input.payment_note?.trim() || null,
+      payment_note: withoutClaimPhoto(input.payment_note),
       status: "pending",
     })
     .select()
     .single();
   if (error) throw error;
   return data;
+}
+
+async function postNameAlert(
+  input: { claimId?: string; displayName: string; amount: number; payMethod?: string; place?: "windshield" | "hatch" },
+  token: string | undefined,
+) {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch("/api/admin-name", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        claimId: input.claimId,
+        displayName: input.displayName,
+        amount: input.amount,
+        payMethod: input.payMethod,
+        place: input.place,
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(body.error || "Could not send the name alert.");
+    }
+  } catch (err) {
+    throw new Error(describeFollowError(err, "Could not send the name alert."));
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Tell Mike about a car/windshield name. Safe to call for guests and signed-in requests. */
+export async function notifyNameOnCar(input: {
+  claimId?: string;
+  displayName: string;
+  amount: number;
+  payMethod?: string;
+  place: "windshield" | "hatch";
+}) {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  try {
+    await postNameAlert(input, token);
+  } catch (err) {
+    if (input.claimId) throw err;
+    await postNameAlert(input, token);
+  }
 }
 
 export async function reviewNameClaim(id: string, status: "approved" | "rejected") {
@@ -410,6 +462,182 @@ export async function getMyNameClaims(userId: string): Promise<NameClaim[]> {
 export async function deleteNameClaim(id: string) {
   const { error } = await supabase.from("name_claims").delete().eq("id", id);
   if (error) throw error;
+}
+
+const CLAIM_IMAGE_LINE = /(?:^|\n)image:(https?:\/\/\S+)/;
+
+function isStoredClaimPhoto(url: string) {
+  try {
+    return new URL(url).pathname.includes("/storage/v1/object/public/post-images/");
+  } catch {
+    return false;
+  }
+}
+
+export function claimImageUrl(claim: { image_url?: string | null; payment_note?: string | null }) {
+  const url = claim.image_url || claim.payment_note?.match(CLAIM_IMAGE_LINE)?.[1] || null;
+  if (!url || !isStoredClaimPhoto(url)) return null;
+  return url;
+}
+
+function withoutClaimPhoto(note: string | null | undefined) {
+  if (!note) return null;
+  const text = note.replace(CLAIM_IMAGE_LINE, "").replace(/\n{2,}/g, "\n").trim();
+  return text || null;
+}
+
+export function claimNoteText(note: string | null | undefined) {
+  if (!note) return "";
+  return note.replace(/^window:(windshield|hatch)\n?/, "").replace(CLAIM_IMAGE_LINE, "").replace(/\n{2,}/g, "\n").trim();
+}
+
+function noteWithImage(note: string | null | undefined, imageUrl: string) {
+  const text = claimNoteText(note) || "Added in admin";
+  return `${text}\nimage:${imageUrl}`;
+}
+
+class NameApiMissing extends Error {}
+
+async function saveNameViaApi(payload: {
+  id?: string;
+  display_name?: string;
+  amount?: number;
+  tier?: "car" | "windshield";
+  image?: File | null;
+}) {
+  const token = await adminSessionToken();
+  const form = new FormData();
+  if (payload.id) form.append("id", payload.id);
+  if (payload.display_name) form.append("display_name", payload.display_name);
+  if (payload.amount != null) form.append("amount", String(payload.amount));
+  if (payload.tier) form.append("tier", payload.tier);
+  if (payload.image) form.append("image", payload.image);
+
+  let res: Response;
+  try {
+    res = await fetch("/api/admin-name", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+  } catch (err) {
+    if (isNetworkError(err)) throw new NameApiMissing();
+    throw new Error(describeFollowError(err, "Could not reach the server to save that name. Try again."));
+  }
+
+  const text = await res.text();
+  let body = {} as NameClaim & { error?: string };
+  try {
+    body = JSON.parse(text) as NameClaim & { error?: string };
+  } catch {
+    body = {} as NameClaim & { error?: string };
+  }
+  if (!res.ok || !body.id) {
+    if (res.status === 404 || text.trimStart().startsWith("<")) throw new NameApiMissing();
+    throw new Error(body.error || "Failed to save name.");
+  }
+  return body;
+}
+
+async function uploadClaimImage(userId: string, file: File) {
+  const path = `${userId}/names/${Date.now()}.jpg`;
+  const { error } = await supabase.storage.from("post-images").upload(path, file, {
+    contentType: file.type || "image/jpeg",
+    upsert: false,
+  });
+  if (error) throw error;
+  return supabase.storage.from("post-images").getPublicUrl(path).data.publicUrl;
+}
+
+async function assertAdminUserId() {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const userId = sessionData.session?.user.id;
+  if (!userId) throw new Error("Not signed in.");
+  const { data, error } = await supabase.from("profiles").select("role").eq("id", userId).maybeSingle();
+  if (error) throw error;
+  if (data?.role !== "admin") throw new Error("Only an admin can add a photo.");
+  return userId;
+}
+
+async function createApprovedNameClaimDirect(input: {
+  display_name: string;
+  amount: number;
+  tier?: "car" | "windshield";
+  image?: File | null;
+}) {
+  const userId = await assertAdminUserId();
+  const imageUrl = input.image ? await uploadClaimImage(userId, input.image) : null;
+  const tier = input.tier === "windshield" ? "windshield" : input.tier === "car" ? "car" : input.amount >= 100 ? "windshield" : "car";
+  const { data, error } = await supabase
+    .from("name_claims")
+    .insert({
+      user_id: userId,
+      display_name: input.display_name.trim(),
+      amount: input.amount,
+      tier,
+      payment_note: imageUrl ? noteWithImage("Added in admin", imageUrl) : "Added in admin",
+      status: "approved",
+      reviewed_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  const { data: fixed, error: fixError } = await supabase.from("name_claims").update({ tier }).eq("id", data.id).select().single();
+  if (fixError) throw fixError;
+  return fixed;
+}
+
+async function setNameClaimImageDirect(id: string, image: File) {
+  const userId = await assertAdminUserId();
+  const imageUrl = await uploadClaimImage(userId, image);
+  const { data: existing, error: readError } = await supabase
+    .from("name_claims")
+    .select("payment_note")
+    .eq("id", id)
+    .maybeSingle();
+  if (readError) throw readError;
+  if (!existing) throw new Error("That name was not found.");
+  const { data, error } = await supabase
+    .from("name_claims")
+    .update({ payment_note: noteWithImage(existing.payment_note, imageUrl) })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function createApprovedNameClaim(input: {
+  display_name: string;
+  amount: number;
+  tier?: "car" | "windshield";
+  image?: File | null;
+}) {
+  await assertAdminUserId();
+  const image = input.image ? await preparePostImage(input.image) : null;
+  const tier = input.tier === "windshield" ? "windshield" : input.tier === "car" ? "car" : input.amount >= 100 ? "windshield" : "car";
+  try {
+    return await saveNameViaApi({
+      display_name: input.display_name.trim(),
+      amount: input.amount,
+      tier,
+      image,
+    });
+  } catch (err) {
+    if (!(err instanceof NameApiMissing)) throw err;
+    return createApprovedNameClaimDirect({ ...input, tier, image });
+  }
+}
+
+export async function setNameClaimImage(id: string, image: File) {
+  await assertAdminUserId();
+  const prepared = await preparePostImage(image);
+  try {
+    return await saveNameViaApi({ id, image: prepared });
+  } catch (err) {
+    if (!(err instanceof NameApiMissing)) throw err;
+    return setNameClaimImageDirect(id, prepared);
+  }
 }
 
 export async function getEventLogs(): Promise<EventLog[]> {
@@ -504,10 +732,78 @@ export async function notifyFollowers(eventType: "post" | "location", eventKey: 
   return res.json();
 }
 
-export async function requestRouteOutreach(
-  here: { label: string; lat: number; lng: number },
-  ahead: { label: string; lat: number; lng: number }[],
-) {
+export type GiveawayEntry = { email: string; name: string };
+
+export type GiveawayStatus = {
+  entries: GiveawayEntry[];
+  count: number;
+  settings: Pick<
+    SiteSettings,
+    "giveaway_ends_at" | "giveaway_winner_email" | "giveaway_winner_name" | "giveaway_drawn_at"
+  > | null;
+};
+
+async function adminBearer() {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error("Not signed in.");
+  return token;
+}
+
+export async function getGiveawayStatus(): Promise<GiveawayStatus> {
+  const token = await adminBearer();
+  const res = await fetch("/api/giveaway-draw", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const body = (await res.json().catch(() => ({}))) as GiveawayStatus & { error?: string };
+  if (!res.ok) throw new Error(body.error || "Could not load giveaway entries.");
+  return body;
+}
+
+export async function drawGiveawayWinner() {
+  const token = await adminBearer();
+  const res = await fetch("/api/giveaway-draw", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const body = (await res.json().catch(() => ({}))) as {
+    error?: string;
+    winner?: GiveawayEntry;
+    drawn_at?: string;
+    emailError?: string;
+  };
+  if (!res.ok) throw new Error(body.error || "Could not draw a winner.");
+  return body;
+}
+
+export type RouteEmailClient = {
+  business_name: string;
+  email: string;
+  kind: string;
+  label: string;
+};
+
+export type RouteEmailRun = {
+  run_id?: string;
+  status?: string;
+  simulate?: boolean;
+  here_label?: string;
+  clients?: RouteEmailClient[];
+  example_subject?: string | null;
+  example_text?: string | null;
+  example_html?: string | null;
+  queued?: number;
+  skipped_recent?: number;
+  sent?: number;
+  note?: string;
+  skipped?: boolean;
+  reason?: string;
+  telegram_sent?: boolean;
+};
+
+export type RouteEmailAction = "approve_example" | "approve_send" | "cancel";
+
+async function postRouteOutreach(body: unknown): Promise<RouteEmailRun> {
   const { data: sessionData } = await supabase.auth.getSession();
   const token = sessionData.session?.access_token;
   if (!token) throw new Error("Not signed in.");
@@ -518,13 +814,23 @@ export async function requestRouteOutreach(
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ here, ahead }),
+    body: JSON.stringify(body),
   });
-  if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(body.error || "Could not email shops on this route.");
-  }
-  return res.json();
+  const payload = (await res.json().catch(() => ({}))) as RouteEmailRun & { error?: string };
+  if (!res.ok) throw new Error(payload.error || "Could not update the route email.");
+  return payload;
+}
+
+export async function requestRouteOutreach(
+  here: { label: string; lat: number; lng: number },
+  ahead: { label: string; lat: number; lng: number }[],
+  options?: { simulate?: boolean },
+) {
+  return postRouteOutreach({ here, ahead, simulate: options?.simulate === true });
+}
+
+export async function decideRouteOutreach(runId: string, action: RouteEmailAction) {
+  return postRouteOutreach({ run_id: runId, action });
 }
 
 /** Geocode a city/area label to coordinates via OpenStreetMap Nominatim (city-level). */

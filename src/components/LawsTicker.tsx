@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { LAW_TOPICS, STATE_LAWS, type LawTopic } from "@/data/stateLaws";
+import { VEHICLE_LAWS, VEHICLE_TOPICS, type VehicleTopic } from "@/data/vehicleLaws";
 
 const SEED_KEY = "mwc_law_ticker_seed";
 
@@ -29,7 +30,7 @@ function mulberry32(a: number) {
 export default function LawsTicker() {
   const order = useMemo(() => {
     const rand = mulberry32(sessionSeed());
-    return [...STATE_LAWS].sort(() => rand() - 0.5);
+    return [...STATE_LAWS, ...VEHICLE_LAWS].sort(() => rand() - 0.5);
   }, []);
   const [index, setIndex] = useState(0);
 
@@ -41,7 +42,9 @@ export default function LawsTicker() {
 
   const row = order[index];
   if (!row) return null;
-  const topic = LAW_TOPICS.find((t) => t.id === (row.topic as LawTopic))?.label ?? row.topic;
+  const topic =
+    [...LAW_TOPICS, ...VEHICLE_TOPICS].find((t) => t.id === (row.topic as LawTopic | VehicleTopic))?.label ??
+    row.topic;
 
   return (
     <section className="border-y border-border/50 bg-white/40">

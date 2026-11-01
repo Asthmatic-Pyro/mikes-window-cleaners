@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import GlassSheen from "@/components/GlassSheen";
 
 interface HeroSectionProps {
   onGetQuote: () => void;
@@ -8,7 +9,7 @@ interface HeroSectionProps {
 
 export default function HeroSection({ onGetQuote, onSeeServices }: HeroSectionProps) {
   return (
-    <section id="top" className="relative min-h-[100svh] overflow-hidden">
+    <section className="relative min-h-[100svh] overflow-hidden">
       <div className="absolute inset-0">
         <img
           src="/images/dirty-storefront.jpg"
@@ -20,17 +21,18 @@ export default function HeroSection({ onGetQuote, onSeeServices }: HeroSectionPr
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(105deg, hsl(210 42% 5% / 0.78) 0%, hsl(210 35% 8% / 0.52) 48%, hsl(210 30% 12% / 0.28) 100%)",
+              "linear-gradient(105deg, hsl(286 42% 5% / 0.78) 0%, hsl(286 35% 8% / 0.52) 48%, hsl(286 30% 12% / 0.28) 100%)",
           }}
         />
         <div
-          className="pointer-events-none absolute inset-0 opacity-35 animate-shimmer"
+          className="hero-shimmer pointer-events-none absolute inset-0 opacity-35 animate-shimmer"
           style={{
             backgroundImage:
               "linear-gradient(105deg, transparent 28%, hsl(0 0% 100% / 0.12) 50%, transparent 72%)",
             backgroundSize: "220% 100%",
           }}
         />
+        <GlassSheen />
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-end px-4 pb-16 pt-28 md:justify-center md:pb-24 md:pt-20">

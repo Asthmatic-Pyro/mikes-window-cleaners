@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Check, Coffee, CreditCard, ExternalLink, Send, Trash2, Wallet } from "lucide-react";
 import Modal from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
-import { deleteNameClaim, getMyNameClaims, submitNameClaim } from "@/lib/follow/api";
+import { claimImageUrl, deleteNameClaim, getMyNameClaims, notifyNameOnCar } from "@/lib/follow/api";
 import {
   availablePayMethods,
   checkoutUrl,
@@ -23,6 +23,10 @@ const PRESETS: Record<NameTier, number[]> = {
   car: [5, 10, 25, 50],
   windshield: [100, 150, 250, 500],
 };
+
+function windowLabel(tier: NameTier) {
+  return tier === "windshield" ? "windshield" : "hatch window";
+}
 
 export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarProps) {
   const { user } = useAuth();
@@ -74,11 +78,9 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
 
   const selectTier = (next: NameTier) => {
     setTier(next);
-    const value = Number(amount);
-    if (next === "windshield" && (!Number.isFinite(value) || value < 100)) {
-      setAmount("100");
-    } else if (next === "car" && (!Number.isFinite(value) || value >= 100 || value < 1)) {
-      setAmount("10");
+    if (next === "windshield") {
+      const value = Number(amount);
+      if (!Number.isFinite(value) || value < 100) setAmount("100");
     }
   };
 
@@ -117,25 +119,24 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
     setError(null);
     setPayHref(null);
     try {
-      if (user) {
-        await submitNameClaim({
-          user_id: user.id,
-          display_name: name,
+      try {
+        await notifyNameOnCar({
+          displayName: name,
           amount: parsed,
-          payment_note: `${payMethodLabel(method)} · put “${name}” in the tip message`,
+          payMethod: payMethodLabel(method),
+          place: tier === "windshield" ? "windshield" : "hatch",
         });
-        openCheckout(payUrl);
-        setSuccessCopy(
-          `“${name}” is saved as a ${tier === "windshield" ? "windshield" : "car"} request. Finish ${formatUsd(parsed)} on ${payMethodLabel(method)} and put that name in the tip message so Mike can match it.`,
-        );
+      } catch (err) {
+        console.error(err);
+      }
+      openCheckout(payUrl);
+      setSuccessCopy(
+        `“${name}” is requested for the ${windowLabel(tier)}. Finish ${formatUsd(parsed)} on ${payMethodLabel(method)} and put that name in the tip message so Mike can match it.`,
+      );
+      if (user) {
         setDisplayName("");
         await refreshMine();
         onSubmitted();
-      } else {
-        openCheckout(payUrl);
-        setSuccessCopy(
-          `Finish ${formatUsd(parsed)} on ${payMethodLabel(method)} and put “${name}” in the tip message. Sign in afterward if you want the name saved on your account.`,
-        );
       }
       setSuccessOpen(true);
     } catch (err) {
@@ -150,7 +151,7 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
       <div>
         <h2 className="font-display text-xl font-bold tracking-tight">Names on the car</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          After you tip: any amount → name on the car. $100+ → windshield.
+          Choose the hatch window or the windshield. Windshield starts at $100.
         </p>
       </div>
 
@@ -169,14 +170,22 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
           </h3>
           <ul className="mt-2 flex flex-wrap gap-2">
             {windshield.length === 0 && <li className="text-sm text-muted-foreground">Open for the first name.</li>}
-            {windshield.map((n) => (
-              <li
-                key={n.id}
-                className="rounded-md bg-white/80 px-2.5 py-1 text-sm font-semibold text-foreground shadow-sm"
-              >
-                {n.display_name}
-              </li>
-            ))}
+            {windshield.map((n) => {
+              const photo = claimImageUrl(n);
+              return (
+                <li
+                  key={n.id}
+                  className={
+                    photo
+                      ? "w-36 overflow-hidden rounded-md bg-white/80 text-sm font-semibold text-foreground shadow-sm"
+                      : "rounded-md bg-white/80 px-2.5 py-1 text-sm font-semibold text-foreground shadow-sm"
+                  }
+                >
+                  {photo && <img src={photo} alt="" className="h-24 w-full object-cover" loading="lazy" />}
+                  {photo ? <span className="block px-2.5 py-1.5">{n.display_name}</span> : n.display_name}
+                </li>
+              );
+            })}
           </ul>
         </button>
         <button
@@ -188,14 +197,25 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
               : "border-white/60 bg-white/55 hover:border-primary/25"
           }`}
         >
-          <h3 className={`font-display text-lg font-bold ${tier === "car" ? "text-primary" : ""}`}>On the car</h3>
+          <h3 className={`font-display text-lg font-bold ${tier === "car" ? "text-primary" : ""}`}>Hatch window</h3>
           <ul className="mt-2 flex flex-wrap gap-2">
-            {car.length === 0 && <li className="text-sm text-muted-foreground">Be the first to ride along.</li>}
-            {car.map((n) => (
-              <li key={n.id} className="rounded-md bg-secondary/80 px-2.5 py-1 text-sm font-medium">
-                {n.display_name}
-              </li>
-            ))}
+            {car.length === 0 && <li className="text-sm text-muted-foreground">Open for the first name.</li>}
+            {car.map((n) => {
+              const photo = claimImageUrl(n);
+              return (
+                <li
+                  key={n.id}
+                  className={
+                    photo
+                      ? "w-36 overflow-hidden rounded-md bg-secondary/80 text-sm font-medium"
+                      : "rounded-md bg-secondary/80 px-2.5 py-1 text-sm font-medium"
+                  }
+                >
+                  {photo && <img src={photo} alt="" className="h-24 w-full object-cover" loading="lazy" />}
+                  {photo ? <span className="block px-2.5 py-1.5">{n.display_name}</span> : n.display_name}
+                </li>
+              );
+            })}
           </ul>
         </button>
       </div>
@@ -204,14 +224,43 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
         <div className="flex flex-wrap items-end justify-between gap-2">
           <h3 className="font-display text-lg font-bold">Checkout</h3>
           <p className="text-sm text-muted-foreground">
-            {tier === "windshield" ? "Windshield" : "On the car"}
+            {tier === "windshield" ? "Windshield" : "Hatch window"}
             {validAmount ? ` · ${formatUsd(parsed)}` : ""}
           </p>
         </div>
 
           <form onSubmit={(e) => void onSubmit(e)} className="mt-4 space-y-4">
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">Where should it go?</legend>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => selectTier("car")}
+                  className={`rounded-md border px-3 py-2.5 text-left text-sm font-semibold transition-colors ${
+                    tier === "car"
+                      ? "border-primary/25 bg-primary/5"
+                      : "border-white/80 bg-white/80 hover:border-primary/25"
+                  }`}
+                >
+                  Hatch window
+                  <span className="mt-0.5 block text-xs font-medium text-muted-foreground">Any amount</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => selectTier("windshield")}
+                  className={`rounded-md border px-3 py-2.5 text-left text-sm font-semibold transition-colors ${
+                    tier === "windshield"
+                      ? "border-primary/25 bg-primary/5"
+                      : "border-white/80 bg-white/80 hover:border-primary/25"
+                  }`}
+                >
+                  Windshield
+                  <span className="mt-0.5 block text-xs font-medium text-muted-foreground">$100 or more</span>
+                </button>
+              </div>
+            </fieldset>
             <label className="block space-y-1">
-              <span className="text-sm font-medium">Name to put on the car</span>
+              <span className="text-sm font-medium">Name to put on the window</span>
               <input
                 className="field-input"
                 value={displayName}
@@ -252,13 +301,7 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
                     min={minAmount}
                     step="0.01"
                     value={amount}
-                    onChange={(e) => {
-                      const next = e.target.value;
-                      setAmount(next);
-                      const value = Number(next);
-                      if (Number.isFinite(value) && value >= 100) setTier("windshield");
-                      else if (Number.isFinite(value) && value > 0) setTier("car");
-                    }}
+                    onChange={(e) => setAmount(e.target.value)}
                     required
                   />
                 </div>
@@ -354,7 +397,7 @@ export default function NameOnCar({ names, settings, onSubmitted }: NameOnCarPro
                   <p className="font-semibold">
                     {claim.display_name}{" "}
                     <span className="text-sm font-medium text-muted-foreground">
-                      · {formatUsd(Number(claim.amount))} · {claim.tier === "windshield" ? "windshield" : "car"}
+                      · {formatUsd(Number(claim.amount))} · {windowLabel(claim.tier)}
                     </span>
                   </p>
                   <p className="text-xs capitalize text-muted-foreground">{claim.status}</p>

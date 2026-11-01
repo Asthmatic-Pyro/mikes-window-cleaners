@@ -4,41 +4,41 @@
 
 @layer base {
   :root {
-    /* NexGentics blue — hsl(210 85% 50%) / ~#1380ec */
-    --background: 210 42% 96%;
-    --foreground: 210 40% 10%;
+    /* Ink purple — hsl(286 44% 38%) / ~#5b2d8e */
+    --background: 286 28% 96%;
+    --foreground: 286 32% 12%;
 
-    --primary: 210 85% 48%;
+    --primary: 286 44% 38%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 38% 92%;
-    --secondary-foreground: 210 40% 16%;
+    --secondary: 286 24% 92%;
+    --secondary-foreground: 286 30% 18%;
 
-    --muted: 210 28% 93%;
-    --muted-foreground: 210 16% 36%;
+    --muted: 286 18% 93%;
+    --muted-foreground: 286 14% 36%;
 
-    --accent: 210 85% 48%;
+    --accent: 286 44% 38%;
     --accent-foreground: 0 0% 100%;
 
-    --border: 210 22% 82%;
-    --input: 210 24% 88%;
-    --ring: 210 85% 48%;
+    --border: 286 16% 82%;
+    --input: 286 18% 88%;
+    --ring: 286 44% 38%;
 
     --gradient-hero: linear-gradient(
       160deg,
-      hsl(210 50% 91%) 0%,
-      hsl(210 42% 95%) 40%,
-      hsl(210 38% 92%) 100%
+      hsl(286 32% 91%) 0%,
+      hsl(286 28% 95%) 40%,
+      hsl(286 24% 92%) 100%
     );
     --gradient-wash: linear-gradient(
       135deg,
-      hsl(210 85% 42%) 0%,
-      hsl(205 80% 55%) 100%
+      hsl(286 48% 34%) 0%,
+      hsl(300 40% 48%) 100%
     );
     --gradient-glass: linear-gradient(
       125deg,
       hsl(0 0% 100% / 0.65) 0%,
-      hsl(210 50% 96% / 0.35) 50%,
+      hsl(286 30% 96% / 0.35) 50%,
       hsl(0 0% 100% / 0.5) 100%
     );
   }
@@ -54,9 +54,9 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     background-image:
-      radial-gradient(ellipse 75% 48% at 8% -8%, hsl(210 85% 68% / 0.32), transparent),
-      radial-gradient(ellipse 55% 38% at 92% 2%, hsl(205 75% 62% / 0.2), transparent),
-      radial-gradient(ellipse 50% 30% at 50% 100%, hsl(210 60% 80% / 0.15), transparent),
+      radial-gradient(ellipse 75% 48% at 8% -8%, hsl(286 42% 68% / 0.28), transparent),
+      radial-gradient(ellipse 55% 38% at 92% 2%, hsl(300 36% 62% / 0.18), transparent),
+      radial-gradient(ellipse 50% 30% at 50% 100%, hsl(286 30% 80% / 0.14), transparent),
       var(--gradient-hero);
     background-attachment: fixed;
     min-height: 100vh;
@@ -93,11 +93,69 @@
     background-image: var(--gradient-wash);
   }
 
+  .follow-shout-base {
+    background-color: hsl(286 48% 30%);
+    background-image:
+      radial-gradient(ellipse 72% 58% at 108% -12%, hsl(300 48% 68% / 0.45), transparent 52%),
+      radial-gradient(ellipse 48% 42% at -8% 108%, hsl(280 42% 16% / 0.72), transparent 58%),
+      radial-gradient(ellipse 36% 28% at 62% 78%, hsl(295 40% 52% / 0.28), transparent 62%),
+      radial-gradient(ellipse 28% 22% at 18% 18%, hsl(0 0% 100% / 0.16), transparent 70%),
+      linear-gradient(158deg, hsl(286 46% 42%) 0%, hsl(286 48% 34%) 46%, hsl(280 44% 26%) 100%);
+  }
+
+  .follow-shout-weave {
+    background-image:
+      linear-gradient(
+        118deg,
+        transparent 8%,
+        hsl(0 0% 100% / 0.09) 28%,
+        transparent 46%
+      ),
+      linear-gradient(
+        118deg,
+        transparent 54%,
+        hsl(300 60% 88% / 0.07) 68%,
+        transparent 84%
+      ),
+      repeating-linear-gradient(
+        0deg,
+        transparent 0,
+        transparent 3px,
+        hsl(0 0% 100% / 0.035) 3px,
+        hsl(0 0% 100% / 0.035) 4px
+      );
+  }
+
+  .follow-shout-grain {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.7 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: 0.38;
+    mix-blend-mode: overlay;
+  }
+
+  .follow-shout-clouds {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='640' height='640'><filter id='c'><feTurbulence type='fractalNoise' baseFrequency='0.012 0.02' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.75  0 0 0 0 0.88  0 0 0 0 1  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23c)'/></svg>");
+    opacity: 0.45;
+    mix-blend-mode: soft-light;
+  }
+
+  .follow-shout-sheen {
+    background:
+      linear-gradient(
+        112deg,
+        transparent 12%,
+        hsl(0 0% 100% / 0.16) 34%,
+        hsl(300 60% 90% / 0.06) 44%,
+        transparent 64%
+      ),
+      radial-gradient(ellipse 46% 22% at 8% 0%, hsl(0 0% 100% / 0.22), transparent 70%),
+      radial-gradient(ellipse 80% 70% at 50% 120%, hsl(280 40% 12% / 0.35), transparent 55%);
+  }
+
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3
       font-semibold text-primary-foreground transition-all duration-300
       hover:brightness-110 hover:-translate-y-0.5 active:translate-y-0;
-    box-shadow: 0 14px 32px -10px hsl(210 85% 48% / 0.5);
+    box-shadow: 0 14px 32px -10px hsl(286 44% 38% / 0.5);
   }
 
   .btn-secondary {
@@ -154,6 +212,68 @@
   .reveal-on-view.is-visible {
     opacity: 1;
     transform: translateY(0);
+  }
+
+  .invite-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid hsl(36 45% 96% / 0.8);
+    background:
+      linear-gradient(165deg, hsl(36 70% 99% / 0.88) 0%, hsl(286 30% 98% / 0.72) 52%, hsl(0 0% 100% / 0.8) 100%);
+    box-shadow:
+      0 18px 40px -26px hsl(286 32% 28% / 0.38),
+      inset 0 1px 0 hsl(40 80% 100% / 0.9);
+    backdrop-filter: blur(12px);
+    transition:
+      transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.35s ease;
+  }
+
+  .invite-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 32%,
+      hsl(40 100% 98% / 0.55) 48%,
+      transparent 64%
+    );
+    transform: translateX(-130%);
+    pointer-events: none;
+    transition: transform 0.75s ease;
+  }
+
+  .invite-card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 24px 48px -22px hsl(286 36% 30% / 0.42),
+      inset 0 1px 0 hsl(40 80% 100% / 0.95);
+  }
+
+  .invite-card:hover::after {
+    transform: translateX(130%);
+  }
+
+  .photo-sheen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(
+      115deg,
+      transparent 34%,
+      hsl(40 100% 98% / 0.34) 48%,
+      transparent 62%
+    );
+    transform: translateX(-140%);
+    pointer-events: none;
+    transition: transform 0.8s ease;
+  }
+
+  .photo-sheen:hover::after {
+    transform: translateX(140%);
   }
 
   .modal-backdrop {
@@ -240,10 +360,49 @@
   animation: shimmer 10s linear infinite;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .hero-shimmer {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer,
+  .invite-card,
+  .invite-card::after,
+  .photo-sheen::after {
+    animation: none;
+    transition: none;
+  }
+
+  .invite-card:hover {
+    transform: none;
+  }
+
+  .invite-card::after,
+  .photo-sheen::after {
+    display: none;
+  }
+}
+
 /* Keep Leaflet under site chrome */
 .leaflet-container {
   z-index: 0;
   font: inherit;
+}
+
+.leaflet-control-attribution {
+  max-width: min(16rem, 58%);
+  font-size: 10px !important;
+  line-height: 1.3;
+}
+
+.leaflet-tile-pane {
+  filter: grayscale(1) contrast(0.92) brightness(1.18);
+}
+
+.leaflet-states-pane path {
+  cursor: pointer;
 }
 
 /* Radar frames are preloaded; don't fade individual tiles in and out. */
@@ -255,6 +414,97 @@
 .journey-pin-wrap {
   background: none !important;
   border: none !important;
+}
+
+.journey-pin {
+  position: relative;
+}
+
+.journey-pin--selected svg {
+  filter: drop-shadow(0 0 2px #0f172a);
+}
+
+.leaflet-tooltip.law-bubble {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  white-space: normal;
+}
+
+.leaflet-tooltip.law-bubble::before {
+  display: none;
+}
+
+.law-bubble-card {
+  width: min(16.5rem, 68vw);
+  max-height: min(280px, 52vh);
+  overflow: auto;
+  border-radius: 0.5rem;
+  border: 1px solid hsl(210 30% 88%);
+  background: hsl(0 0% 100% / 0.97);
+  padding: 0.65rem 0.75rem;
+  color: hsl(215 28% 17%);
+  box-shadow: 0 10px 28px hsl(215 40% 20% / 0.18);
+}
+
+.law-bubble-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.law-bubble-title i,
+.law-bubble-card li i {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  flex: none;
+  border-radius: 999px;
+}
+
+.law-bubble-title em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: hsl(215 16% 40%);
+}
+
+.law-bubble-status,
+.law-bubble-fine,
+.law-bubble-more {
+  margin: 0.25rem 0 0;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: hsl(215 14% 38%);
+}
+
+.law-bubble-card ul {
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.law-bubble-card li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.law-bubble-card li b {
+  flex: none;
+  width: 4.4rem;
+  font-weight: 650;
+}
+
+.law-bubble-fine {
+  color: hsl(215 25% 22%);
 }
 
 .journey-pin--here {

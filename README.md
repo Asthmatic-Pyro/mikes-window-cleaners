@@ -66,7 +66,7 @@ update public.profiles set role = 'admin' where email = 'you@example.com';
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-only key for follower emails |
 | `SITE_URL` | Used in notification email links |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Same as quote form (follower emails) |
-| `LEAD_MAGNET_URL` / `LEAD_MAGNET_API_KEY` | Field API origin and `ADMIN_API_KEY`. Emails shops when Where I am changes. |
+| `LEAD_MAGNET_URL` / `LEAD_MAGNET_API_KEY` | Field API origin and `ADMIN_API_KEY`. A new Where I am starts a route email that waits for two Telegram approvals before anything sends. |
 
 ## Quote form (Resend)
 

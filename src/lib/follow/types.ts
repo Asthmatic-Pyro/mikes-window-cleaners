@@ -76,11 +76,12 @@ export type Reaction = {
 
 export type NameClaim = {
   id: string;
-  user_id: string;
+  user_id: string | null;
   display_name: string;
   amount: number;
   tier: NameTier;
   payment_note: string | null;
+  image_url: string | null;
   status: ClaimStatus;
   created_at: string;
   reviewed_at: string | null;
@@ -106,6 +107,10 @@ export type SiteSettings = {
   amazon_wishlist_url: string;
   mailbox_address: string;
   mailbox_notes: string;
+  giveaway_ends_at?: string;
+  giveaway_winner_email?: string;
+  giveaway_winner_name?: string;
+  giveaway_drawn_at?: string | null;
   updated_at: string;
 };
 
@@ -180,11 +185,12 @@ export type Database = {
       };
       name_claims: {
         Row: NameClaim;
-        Insert: Omit<NameClaim, "id" | "created_at" | "reviewed_at" | "status" | "profiles"> & {
+        Insert: Omit<NameClaim, "id" | "created_at" | "reviewed_at" | "status" | "profiles" | "image_url"> & {
           id?: string;
           created_at?: string;
           reviewed_at?: string | null;
           status?: ClaimStatus;
+          image_url?: string | null;
         };
         Update: Partial<NameClaim>;
         Relationships: [];

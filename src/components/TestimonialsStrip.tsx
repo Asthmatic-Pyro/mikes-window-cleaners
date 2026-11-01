@@ -32,7 +32,7 @@ export default function TestimonialsStrip() {
           {rows.map((row) => {
             const stars = testimonialRating(row.answers);
             return (
-              <li key={row.id} className="rounded-md border border-white/60 bg-white/55 p-4">
+              <li key={row.id} className="invite-card p-5">
                 {stars ? <StarRating value={stars} readOnly size="sm" /> : null}
                 <p className={`text-sm leading-relaxed ${stars ? "mt-2" : ""}`}>&ldquo;{row.final_text}&rdquo;</p>
                 <p className="mt-3 text-xs font-semibold text-muted-foreground">

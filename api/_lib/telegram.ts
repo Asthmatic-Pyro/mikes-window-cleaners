@@ -32,7 +32,7 @@ export async function logSiteEvent(eventType: SiteEventType, summary: string, pa
   if (error) console.error("event_log insert:", error.message);
 }
 
-export async function notifyTelegram(summary: string, buttons?: TelegramButton[][]) {
+export async function notifyTelegram(summary: string, buttons?: TelegramButton[][], prefix = "Follow Mike") {
   const token = env("TELEGRAM_BOT_TOKEN");
   const chatId = env("TELEGRAM_CHAT_ID");
   if (!token || !chatId) {
@@ -40,7 +40,7 @@ export async function notifyTelegram(summary: string, buttons?: TelegramButton[]
     return false;
   }
 
-  const text = `Follow Mike\n${summary}`.slice(0, 3500);
+  const text = `${prefix}\n${summary}`.slice(0, 3500);
   const body: Record<string, unknown> = {
     chat_id: chatId,
     text,
@@ -101,5 +101,5 @@ export async function alertMike(
   buttons?: TelegramButton[][],
 ) {
   await logSiteEvent(eventType, summary, payload);
-  await notifyTelegram(summary, buttons);
+  return notifyTelegram(summary, buttons);
 }

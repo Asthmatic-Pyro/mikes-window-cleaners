@@ -1,3 +1,5 @@
+import { MORE_STATE_LAWS } from "@/data/stateLawsMore";
+
 export type LawTopic = "cannabis" | "recording" | "firearms";
 
 export type CannabisFact = "adult-use" | "medical-only" | "illegal";
@@ -15,7 +17,7 @@ export type LawRecord = {
   asOf: string;
 };
 
-/** Curated, cited blurbs for the Follow route. Not legal advice. Never LLM-written. */
+/** Curated, cited blurbs. Not legal advice. */
 export const STATE_LAWS: LawRecord[] = [
   {
     state: "OH",
@@ -335,11 +337,11 @@ export const STATE_LAWS: LawRecord[] = [
   {
     state: "SC",
     topic: "firearms",
-    fact: "permit",
-    blurb: "South Carolina allows concealed carry with a permit; the state also has open-carry rules for eligible adults.",
-    citation: "S.C. Code § 23-31-210 et seq.",
+    fact: "permitless",
+    blurb: "A person who can legally possess a handgun may carry it, openly or concealed, without a permit. Permits are still issued for travel in other states.",
+    citation: "S.C. Code § 16-23-20; § 23-31-210 et seq.",
     sourceUrl: "https://www.scstatehouse.gov/code/t23c031.php",
-    asOf: "2026-09-12",
+    asOf: "2026-10-11",
   },
   {
     state: "GA",
@@ -665,6 +667,7 @@ export const STATE_LAWS: LawRecord[] = [
     sourceUrl: "https://app.leg.wa.gov/RCW/default.aspx?cite=9.41.050",
     asOf: "2026-09-12",
   },
+  ...MORE_STATE_LAWS,
 ];
 
 export const LAW_TOPICS: { id: LawTopic; label: string }[] = [

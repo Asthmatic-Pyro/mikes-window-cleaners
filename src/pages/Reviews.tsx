@@ -4,6 +4,7 @@ import { CheckCircle2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SitePopups, { type PopupId } from "@/components/SitePopups";
+import TripUpdatesPopup from "@/components/TripUpdatesPopup";
 import StarRating from "@/components/StarRating";
 import { getPublishedTestimonials } from "@/lib/follow/api";
 import { testimonialRating } from "@/lib/follow/rating";
@@ -182,6 +183,7 @@ export default function ReviewsPage() {
       </main>
       <Footer onOpen={setPopup} onGetQuote={() => setPopup("quote")} />
       <SitePopups active={popup} onClose={() => setPopup(null)} onOpenQuote={() => setPopup("quote")} />
+      <TripUpdatesPopup />
     </div>
   );
 }
