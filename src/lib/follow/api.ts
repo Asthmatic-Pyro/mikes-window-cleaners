@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import type {
   Destination,
+  FoodTip,
   LocationCurrent,
   LocationPublic,
   NameClaim,
@@ -299,6 +300,55 @@ export async function hideWallPost(id: string, hidden = true) {
 
 export async function deleteWallPost(id: string) {
   const { error } = await supabase.from("wall_posts").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function getFoodTips(cityLabel?: string): Promise<FoodTip[]> {
+  const params = new URLSearchParams({ food: "1", limit: "32" });
+  if (cityLabel?.trim()) params.set("city", cityLabel.trim());
+  const res = await fetch(`/api/wall-note?${params.toString()}`);
+  const payload = (await res.json().catch(() => ({}))) as { tips?: FoodTip[]; error?: string };
+  if (!res.ok) throw new Error(payload.error || "Could not load food tips.");
+  return payload.tips ?? [];
+}
+
+export async function getAllFoodTipsAdmin(): Promise<FoodTip[]> {
+  const { data, error } = await supabase
+    .from("food_tips")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  return (data as FoodTip[]) ?? [];
+}
+
+export async function submitFoodTip(input: {
+  displayName: string;
+  placeName: string;
+  note?: string;
+  cityLabel: string;
+  lat?: number | null;
+  lng?: number | null;
+  tipAmount?: number | null;
+  payMethod?: string;
+}) {
+  const res = await fetch("/api/wall-note?food=1", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const payload = (await res.json().catch(() => ({}))) as { ok?: boolean; id?: string; error?: string };
+  if (!res.ok) throw new Error(payload.error || "Could not save that food tip.");
+  return payload;
+}
+
+export async function hideFoodTip(id: string, hidden = true) {
+  const { error } = await supabase.from("food_tips").update({ hidden }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteFoodTip(id: string) {
+  const { error } = await supabase.from("food_tips").delete().eq("id", id);
   if (error) throw error;
 }
 

@@ -96,6 +96,20 @@ export type EventLog = {
   created_at: string;
 };
 
+export type FoodTip = {
+  id: string;
+  display_name: string;
+  place_name: string;
+  note: string;
+  city_label: string;
+  lat?: number | null;
+  lng?: number | null;
+  tip_amount?: number | null;
+  pay_method?: string;
+  hidden?: boolean;
+  created_at: string;
+};
+
 export type SiteSettings = {
   id: number;
   streamelements_url: string;
@@ -209,6 +223,21 @@ export type Database = {
         Row: SiteSettings;
         Insert: Partial<SiteSettings>;
         Update: Partial<SiteSettings>;
+        Relationships: [];
+      };
+      food_tips: {
+        Row: FoodTip;
+        Insert: Omit<FoodTip, "id" | "created_at" | "hidden" | "tip_amount" | "pay_method" | "note" | "lat" | "lng"> & {
+          id?: string;
+          created_at?: string;
+          hidden?: boolean;
+          tip_amount?: number | null;
+          pay_method?: string;
+          note?: string;
+          lat?: number | null;
+          lng?: number | null;
+        };
+        Update: Partial<FoodTip>;
         Relationships: [];
       };
       notification_log: {

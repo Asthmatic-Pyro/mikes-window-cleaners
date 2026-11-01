@@ -6,6 +6,7 @@ import DestinationsList from "@/components/follow/DestinationsList";
 import UpdatesFeed from "@/components/follow/UpdatesFeed";
 import CommunityWall from "@/components/follow/CommunityWall";
 import SupportSection from "@/components/follow/SupportSection";
+import FoodiesSection from "@/components/follow/FoodiesSection";
 import NameOnCar from "@/components/follow/NameOnCar";
 import LawPanel from "@/components/follow/LawPanel";
 import { useAuth } from "@/contexts/AuthContext";
@@ -86,8 +87,9 @@ export default function FollowPage() {
 
   useEffect(() => {
     if (loading) return;
-    if (window.location.hash !== "#guestbook") return;
-    const el = document.getElementById("guestbook");
+    const hash = window.location.hash;
+    if (hash !== "#guestbook" && hash !== "#foodies") return;
+    const el = document.getElementById(hash.slice(1));
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [loading]);
 
@@ -196,6 +198,7 @@ export default function FollowPage() {
 
         {/* Secondary: light support + social */}
         <div className="space-y-10 border-t border-border/50 pt-10">
+          <FoodiesSection location={location} settings={settings} />
           <SupportSection settings={settings} />
           <NameOnCar names={names} settings={settings} onSubmitted={() => void refreshAll()} />
           <div id="guestbook" className="scroll-mt-24">

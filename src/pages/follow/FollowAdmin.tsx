@@ -38,11 +38,15 @@ import {
   upsertDestination,
   getGiveawayStatus,
   drawGiveawayWinner,
+  getAllFoodTipsAdmin,
+  hideFoodTip,
+  deleteFoodTip,
   type GiveawayEntry,
 } from "@/lib/follow/api";
 import type {
   Destination,
   DestinationStatus,
+  FoodTip,
   LocationCurrent,
   NameClaim,
   NameTier,
@@ -58,7 +62,17 @@ import ImageCropModal from "@/components/follow/ImageCropModal";
 import StarRating from "@/components/StarRating";
 import { testimonialRating } from "@/lib/follow/rating";
 
-type Tab = "location" | "destinations" | "posts" | "wall" | "claims" | "reviews" | "settings" | "giveaway" | "log";
+type Tab =
+  | "location"
+  | "destinations"
+  | "posts"
+  | "wall"
+  | "foodies"
+  | "claims"
+  | "reviews"
+  | "settings"
+  | "giveaway"
+  | "log";
 
 function aheadStops(list: Destination[]) {
   return list
@@ -114,6 +128,7 @@ export default function FollowAdmin() {
   const [claimPhotoBusy, setClaimPhotoBusy] = useState<string | null>(null);
   const [giveawayEntries, setGiveawayEntries] = useState<GiveawayEntry[]>([]);
   const [giveawayBusy, setGiveawayBusy] = useState(false);
+  const [foodTips, setFoodTips] = useState<FoodTip[]>([]);
 
   const load = useCallback(async () => {
     const settled = await Promise.allSettled([
@@ -125,6 +140,7 @@ export default function FollowAdmin() {
       getAllTestimonialsAdmin(),
       getSettings(),
       getEventLogs(),
+      getAllFoodTipsAdmin(),
     ]);
     const value = <T,>(index: number, fallback: T): T => {
       const item = settled[index];
@@ -142,6 +158,7 @@ export default function FollowAdmin() {
     setReviews((prev) => value(5, prev));
     setSettings((prev) => value(6, prev));
     setEventLogs((prev) => value(7, prev));
+    setFoodTips((prev) => value(8, prev));
     try {
       const giveaway = await getGiveawayStatus();
       setGiveawayEntries(giveaway.entries ?? []);
@@ -469,6 +486,7 @@ export default function FollowAdmin() {
     { id: "claims", label: "Car names" },
     { id: "reviews", label: "Reviews" },
     { id: "wall", label: "Guestbook" },
+    { id: "foodies", label: "Foodies" },
     { id: "log", label: "Log" },
   ];
 
@@ -772,6 +790,47 @@ export default function FollowAdmin() {
                 </div>
                 <p className="mt-1 text-sm whitespace-pre-wrap">{w.body}</p>
                 {w.parent_id && <p className="mt-1 text-xs text-muted-foreground">Reply</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {tab === "foodies" && (
+          <ul className="space-y-2">
+            {foodTips.length === 0 && (
+              <li className="text-sm text-muted-foreground">No food tips yet.</li>
+            )}
+            {foodTips.map((tip) => (
+              <li key={tip.id} className="rounded-md border border-white/60 bg-white/55 px-3 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm font-semibold">
+                    {tip.place_name}
+                    {tip.hidden ? " (hidden)" : ""}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className="btn-secondary py-1.5 text-xs"
+                      onClick={() => void hideFoodTip(tip.id, !tip.hidden).then(load)}
+                    >
+                      {tip.hidden ? "Unhide" : "Hide"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary py-1.5 text-xs"
+                      onClick={() => void deleteFoodTip(tip.id).then(load)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+                <p className="mt-1 text-sm">
+                  {tip.display_name} · {tip.city_label}
+                  {tip.tip_amount != null && Number(tip.tip_amount) > 0
+                    ? ` · $${Number(tip.tip_amount).toFixed(2)}${tip.pay_method ? ` ${tip.pay_method}` : ""}`
+                    : ""}
+                </p>
+                {tip.note ? <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">{tip.note}</p> : null}
               </li>
             ))}
           </ul>

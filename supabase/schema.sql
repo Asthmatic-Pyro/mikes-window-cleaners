@@ -148,6 +148,27 @@ create unique index if not exists trip_subscribers_email_idx
 create index if not exists trip_subscribers_status_idx
   on public.trip_subscribers (status);
 
+-- Foodies tips near current stop
+create table if not exists public.food_tips (
+  id uuid primary key default gen_random_uuid(),
+  display_name text not null,
+  place_name text not null,
+  note text not null default '',
+  city_label text not null,
+  lat double precision,
+  lng double precision,
+  tip_amount numeric(10, 2),
+  pay_method text not null default '',
+  hidden boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists food_tips_city_created_idx
+  on public.food_tips (city_label, created_at desc);
+
+create index if not exists food_tips_created_idx
+  on public.food_tips (created_at desc);
+
 -- Notification dedupe log
 create table if not exists public.notification_log (
   id uuid primary key default gen_random_uuid(),
@@ -303,6 +324,7 @@ alter table public.reactions enable row level security;
 alter table public.name_claims enable row level security;
 alter table public.site_settings enable row level security;
 alter table public.trip_subscribers enable row level security;
+alter table public.food_tips enable row level security;
 alter table public.notification_log enable row level security;
 
 -- Profiles
@@ -413,6 +435,24 @@ create policy "Members or admins delete claims"
 -- Trip subscribers (service role writes; admins can read)
 create policy "Admins read trip subscribers"
   on public.trip_subscribers for select
+  using (public.is_admin());
+
+-- Foodies (public read visible; service role inserts; admins moderate)
+create policy "Public read visible food tips"
+  on public.food_tips for select
+  using (hidden = false);
+
+create policy "Admins read all food tips"
+  on public.food_tips for select
+  using (public.is_admin());
+
+create policy "Admins update food tips"
+  on public.food_tips for update
+  using (public.is_admin())
+  with check (public.is_admin());
+
+create policy "Admins delete food tips"
+  on public.food_tips for delete
   using (public.is_admin());
 
 -- Settings
