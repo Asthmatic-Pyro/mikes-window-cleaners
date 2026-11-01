@@ -1,9 +1,29 @@
-import { Link } from "react-router-dom";
+import type { MouseEvent } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { LINKTREE_URL } from "@/lib/links";
 
+function scrollToFollowSection(id: "foodies" | "guestbook") {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 export default function FollowHeader() {
   const { user, profile, isAdmin, signOut, loading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const onFollow = location.pathname.toLowerCase() === "/follow";
+
+  const goSection = (id: "foodies" | "guestbook") => (e: MouseEvent) => {
+    if (!onFollow) return;
+    e.preventDefault();
+    if (location.hash === `#${id}`) {
+      scrollToFollowSection(id);
+      return;
+    }
+    navigate(`/Follow#${id}`, { replace: false });
+    window.setTimeout(() => scrollToFollowSection(id), 0);
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/50 bg-white/70 backdrop-blur-xl">
@@ -15,10 +35,18 @@ export default function FollowHeader() {
           <Link to="/Follow" className="truncate font-display text-lg font-bold tracking-tight text-foreground">
             Follow Mike
           </Link>
-          <Link to="/Follow#foodies" className="hidden text-sm font-medium text-muted-foreground hover:text-primary sm:inline">
+          <Link
+            to="/Follow#foodies"
+            onClick={goSection("foodies")}
+            className="hidden text-sm font-medium text-muted-foreground hover:text-primary sm:inline"
+          >
             Foodies
           </Link>
-          <Link to="/Follow#guestbook" className="text-sm font-medium text-muted-foreground hover:text-primary">
+          <Link
+            to="/Follow#guestbook"
+            onClick={goSection("guestbook")}
+            className="text-sm font-medium text-muted-foreground hover:text-primary"
+          >
             Guestbook
           </Link>
           <Link to="/reviews" className="text-sm font-medium text-muted-foreground hover:text-primary">

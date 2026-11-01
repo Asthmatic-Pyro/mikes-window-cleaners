@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import FollowHeader from "@/components/follow/FollowHeader";
 import JourneyMap from "@/components/follow/JourneyMap";
 import DestinationsList from "@/components/follow/DestinationsList";
@@ -31,6 +31,7 @@ import type {
 } from "@/lib/follow/types";
 
 export default function FollowPage() {
+  const location = useLocation();
   const { configured, user, updateProfile, profile } = useAuth();
   const { weather } = useWeather();
   const [location, setLocation] = useState<LocationPublic | null>(null);
@@ -87,11 +88,26 @@ export default function FollowPage() {
 
   useEffect(() => {
     if (loading) return;
-    const hash = window.location.hash;
+    const hash = location.hash || window.location.hash;
     if (hash !== "#guestbook" && hash !== "#foodies") return;
-    const el = document.getElementById(hash.slice(1));
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [loading]);
+    const id = hash.slice(1);
+    let cancelled = false;
+    let tries = 0;
+    const jump = () => {
+      if (cancelled) return;
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      if (tries++ < 12) window.setTimeout(jump, 40);
+    };
+    const t = window.setTimeout(jump, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [loading, location.hash, location.key]);
 
   if (!configured) {
     return (
