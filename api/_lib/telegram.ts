@@ -10,6 +10,7 @@ export type SiteEventType =
   | "post"
   | "location"
   | "review"
+  | "trip"
   | "system";
 
 type TelegramButton = { text: string; callback_data: string };

@@ -33,6 +33,7 @@ const EVENT_TYPES: SiteEventType[] = [
   "post",
   "location",
   "review",
+  "trip",
   "system",
 ];
 

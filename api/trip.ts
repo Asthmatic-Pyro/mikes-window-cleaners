@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { checkSubscriberEmail } from "./_lib/emailCheck.js";
 import { env } from "./_lib/env.js";
+import { alertMike } from "./_lib/telegram.js";
 
 type Body = {
   email?: string;
@@ -71,12 +72,18 @@ export async function GET(request: Request) {
         updated_at: new Date().toISOString(),
       })
       .eq("unsubscribe_token", unsub)
-      .select("email")
+      .select("email, display_name")
       .maybeSingle();
 
     if (error || !data) {
       return page("Link not found", "<p>That unsubscribe link is invalid or already used.</p>");
     }
+    const who = (data.display_name || "").trim() || data.email;
+    void alertMike("trip", `Trip updates unsubscribed: ${who}\n${data.email}`, {
+      email: data.email,
+      display_name: data.display_name,
+      status: "unsubscribed",
+    });
     return page(
       "You are unsubscribed",
       "<p>You will not get where-I-am or when-I-move emails from Mike anymore.</p>",
@@ -102,6 +109,13 @@ export async function GET(request: Request) {
   if (error || !data) {
     return page("Link not found", "<p>That confirmation link is invalid or expired.</p>");
   }
+
+  const who = (data.display_name || "").trim() || data.email;
+  void alertMike(
+    "trip",
+    `Trip entry confirmed: ${who}\n${data.email}\nGiveaway entry counted.`,
+    { email: data.email, display_name: data.display_name, status: "confirmed" },
+  );
 
   return page(
     "You are on the list",
@@ -227,6 +241,13 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+
+  const who = displayName || checked.email;
+  void alertMike(
+    "trip",
+    `Trip signup (waiting to confirm): ${who}\n${checked.email}`,
+    { email: checked.email, display_name: displayName, status: "pending" },
+  );
 
   return Response.json({
     ok: true,

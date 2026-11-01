@@ -10,6 +10,7 @@ import {
   setClaimWindow,
   tierFromPlace,
 } from "./_lib/nameAlert.js";
+import { alertMike } from "./_lib/telegram.js";
 
 type GiveawayEntry = { email: string; name: string };
 
@@ -235,6 +236,12 @@ async function postDrawGiveaway(request: Request) {
       </div>
     `,
   });
+
+  void alertMike(
+    "trip",
+    `Giveaway winner drawn: ${winner.name || winner.email}\n${winner.email}`,
+    { email: winner.email, name: winner.name, status: "drawn" },
+  );
 
   if (sendError) {
     return Response.json({
