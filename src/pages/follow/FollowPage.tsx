@@ -31,7 +31,7 @@ import type {
 } from "@/lib/follow/types";
 
 export default function FollowPage() {
-  const location = useLocation();
+  const route = useLocation();
   const { configured, user, updateProfile, profile } = useAuth();
   const { weather } = useWeather();
   const [location, setLocation] = useState<LocationPublic | null>(null);
@@ -88,7 +88,7 @@ export default function FollowPage() {
 
   useEffect(() => {
     if (loading) return;
-    const hash = location.hash || window.location.hash;
+    const hash = route.hash || window.location.hash;
     if (hash !== "#guestbook" && hash !== "#foodies") return;
     const id = hash.slice(1);
     let cancelled = false;
@@ -107,7 +107,7 @@ export default function FollowPage() {
       cancelled = true;
       window.clearTimeout(t);
     };
-  }, [loading, location.hash, location.key]);
+  }, [loading, route.hash, route.key]);
 
   if (!configured) {
     return (
