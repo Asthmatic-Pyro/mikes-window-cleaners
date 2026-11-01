@@ -130,7 +130,7 @@ export async function POST(request: Request) {
     seen.add(email);
     recipients.push({
       email,
-      unsubscribeUrl: `${siteUrl}/api/trip-confirm?unsub=${encodeURIComponent(row.unsubscribe_token)}`,
+      unsubscribeUrl: `${siteUrl}/api/trip?unsub=${encodeURIComponent(row.unsubscribe_token)}`,
     });
   }
 

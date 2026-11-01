@@ -1,6 +1,14 @@
+import { createClient } from "@supabase/supabase-js";
 import { env } from "./_lib/env.js";
+import { deliverNameAlert, nameAlertFromClaimId } from "./_lib/nameAlert.js";
 import { postRouteOutreach } from "./_lib/routeCampaign.js";
-import { adminClient, answerTelegramCallback, notifyTelegram } from "./_lib/telegram.js";
+import {
+  adminClient,
+  alertMike,
+  answerTelegramCallback,
+  notifyTelegram,
+  type SiteEventType,
+} from "./_lib/telegram.js";
 
 type TelegramUpdate = {
   callback_query?: {
@@ -10,10 +18,86 @@ type TelegramUpdate = {
   };
 };
 
+type EventBody = {
+  eventType?: SiteEventType;
+  summary?: string;
+  payload?: Record<string, unknown>;
+};
+
+const EVENT_TYPES: SiteEventType[] = [
+  "user",
+  "signin",
+  "quote",
+  "name",
+  "wall",
+  "post",
+  "location",
+  "review",
+  "system",
+];
+
+async function postSiteEvent(request: Request) {
+  const secret = env("TELEGRAM_WEBHOOK_SECRET");
+  const headerSecret = request.headers.get("x-telegram-secret") || "";
+  const supabaseUrl = env("VITE_SUPABASE_URL") || env("SUPABASE_URL");
+  const anonKey = env("VITE_SUPABASE_ANON_KEY") || env("SUPABASE_ANON_KEY");
+
+  let authorized = Boolean(secret && headerSecret && headerSecret === secret);
+
+  if (!authorized) {
+    const authHeader = request.headers.get("authorization") || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    if (token && supabaseUrl && anonKey) {
+      const userClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      });
+      const { data } = await userClient.auth.getUser();
+      authorized = Boolean(data.user);
+    }
+  }
+
+  if (!authorized) {
+    return Response.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  let body: EventBody;
+  try {
+    body = (await request.json()) as EventBody;
+  } catch {
+    return Response.json({ error: "Invalid request body." }, { status: 400 });
+  }
+
+  const eventType = body.eventType;
+  const summary = body.summary?.trim() ?? "";
+  if (!eventType || !EVENT_TYPES.includes(eventType) || !summary) {
+    return Response.json({ error: "eventType and summary are required." }, { status: 400 });
+  }
+
+  if (eventType === "name") {
+    const claimId = typeof body.payload?.id === "string" ? body.payload.id : "";
+    if (claimId) {
+      const loaded = await nameAlertFromClaimId(claimId);
+      if (loaded.kind === "ready") {
+        const result = await deliverNameAlert(loaded.input);
+        return Response.json({ ok: true, ...result });
+      }
+    }
+  }
+
+  await alertMike(eventType, summary, body.payload);
+  return Response.json({ ok: true });
+}
+
 export async function POST(request: Request) {
   const secret = env("TELEGRAM_WEBHOOK_SECRET");
-  const header = request.headers.get("x-telegram-bot-api-secret-token") || "";
-  if (!secret || header !== secret) {
+  const botHeader = request.headers.get("x-telegram-bot-api-secret-token") || "";
+
+  // Site event alerts (old /api/telegram-event) share this function on Hobby plan.
+  if (!botHeader) {
+    return postSiteEvent(request);
+  }
+
+  if (!secret || botHeader !== secret) {
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
 

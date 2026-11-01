@@ -20,7 +20,7 @@ export default function TripUpdatesForm({ idPrefix = "trip", compact, onSuccess 
     setError(null);
     setMessage(null);
     try {
-      const res = await fetch("/api/trip-subscribe", {
+      const res = await fetch("/api/trip", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, displayName: name }),

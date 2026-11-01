@@ -752,7 +752,7 @@ async function adminBearer() {
 
 export async function getGiveawayStatus(): Promise<GiveawayStatus> {
   const token = await adminBearer();
-  const res = await fetch("/api/giveaway-draw", {
+  const res = await fetch("/api/admin-name?giveaway=1", {
     headers: { Authorization: `Bearer ${token}` },
   });
   const body = (await res.json().catch(() => ({}))) as GiveawayStatus & { error?: string };
@@ -762,9 +762,13 @@ export async function getGiveawayStatus(): Promise<GiveawayStatus> {
 
 export async function drawGiveawayWinner() {
   const token = await adminBearer();
-  const res = await fetch("/api/giveaway-draw", {
+  const res = await fetch("/api/admin-name", {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ action: "draw_giveaway" }),
   });
   const body = (await res.json().catch(() => ({}))) as {
     error?: string;

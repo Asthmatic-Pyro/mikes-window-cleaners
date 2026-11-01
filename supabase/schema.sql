@@ -454,7 +454,7 @@ create table if not exists private.site_secrets (
 
 insert into private.site_secrets (key, value)
 values
-  ('telegram_webhook_url', 'https://mikeswindowcleaners.com/api/telegram-event'),
+  ('telegram_webhook_url', 'https://mikeswindowcleaners.com/api/telegram-webhook'),
   ('telegram_webhook_secret', 'mwc_tg_wh_k9Qm2Px7Ln4Rv8Wb3Hy')
 on conflict (key) do update set value = excluded.value;
 
