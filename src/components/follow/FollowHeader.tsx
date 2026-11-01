@@ -38,7 +38,7 @@ export default function FollowHeader() {
           {!loading && user ? (
             <>
               <span className="hidden max-w-[10rem] truncate text-sm text-muted-foreground sm:inline">
-                {profile?.display_name || user.email}
+                {profile?.display_name || "Signed in"}
               </span>
               {isAdmin && (
                 <Link to="/Follow/admin" className="btn-secondary py-2 text-sm">

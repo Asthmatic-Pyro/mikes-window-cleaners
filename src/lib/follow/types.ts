@@ -240,6 +240,12 @@ export type Database = {
         Update: Partial<FoodTip>;
         Relationships: [];
       };
+      event_log: {
+        Row: EventLog;
+        Insert: Omit<EventLog, "id" | "created_at"> & { id?: string; created_at?: string };
+        Update: Partial<EventLog>;
+        Relationships: [];
+      };
       notification_log: {
         Row: {
           id: string;
@@ -261,7 +267,12 @@ export type Database = {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      site_settings_public: {
+        Row: Omit<SiteSettings, "giveaway_winner_email">;
+        Relationships: [];
+      };
+    };
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean };
       promote_public_location_now: { Args: Record<string, never>; Returns: LocationPublic };

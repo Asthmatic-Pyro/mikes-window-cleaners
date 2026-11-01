@@ -18,7 +18,7 @@ import {
   getLocation,
   getNameClaimsAdmin,
   getPosts,
-  getSettings,
+  getSettingsAdmin,
   hideWallPost,
   notifyFollowers,
   requestRouteOutreach,
@@ -138,7 +138,7 @@ export default function FollowAdmin() {
       getAllWallPostsAdmin(),
       getNameClaimsAdmin(),
       getAllTestimonialsAdmin(),
-      getSettings(),
+      getSettingsAdmin(),
       getEventLogs(),
       getAllFoodTipsAdmin(),
     ]);
@@ -1120,9 +1120,9 @@ export default function FollowAdmin() {
                 {settings?.giveaway_ends_at || "2026-12-31"}.
               </p>
             </div>
-            {settings?.giveaway_winner_email ? (
+            {settings?.giveaway_drawn_at || settings?.giveaway_winner_email ? (
               <p className="rounded-md border border-primary/25 bg-primary/5 px-3 py-2 text-sm text-primary">
-                Winner: {settings.giveaway_winner_name || settings.giveaway_winner_email}
+                Winner: {settings.giveaway_winner_name || "drawn"}
                 {settings.giveaway_drawn_at
                   ? ` · drawn ${new Date(settings.giveaway_drawn_at).toLocaleString()}`
                   : ""}

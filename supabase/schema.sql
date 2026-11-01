@@ -327,9 +327,14 @@ alter table public.trip_subscribers enable row level security;
 alter table public.food_tips enable row level security;
 alter table public.notification_log enable row level security;
 
--- Profiles
-create policy "Profiles are publicly readable"
-  on public.profiles for select using (true);
+-- Profiles (email only for own row or admin — not public HTML)
+create policy "Users read own profile"
+  on public.profiles for select
+  using (auth.uid() = id);
+
+create policy "Admins read all profiles"
+  on public.profiles for select
+  using (public.is_admin());
 
 create policy "Users update own profile"
   on public.profiles for update
@@ -455,9 +460,33 @@ create policy "Admins delete food tips"
   on public.food_tips for delete
   using (public.is_admin());
 
--- Settings
-create policy "Settings are public"
-  on public.site_settings for select using (true);
+-- Settings: public reads omit giveaway_winner_email via view
+create or replace view public.site_settings_public
+with (security_invoker = false)
+as
+select
+  id,
+  streamelements_url,
+  buy_me_a_coffee_url,
+  cash_app_url,
+  cash_app_tag,
+  venmo_url,
+  venmo_tag,
+  amazon_wishlist_url,
+  mailbox_address,
+  mailbox_notes,
+  giveaway_ends_at,
+  giveaway_winner_name,
+  giveaway_drawn_at,
+  updated_at
+from public.site_settings
+where id = 1;
+
+grant select on public.site_settings_public to anon, authenticated, service_role;
+
+create policy "Admins read site settings"
+  on public.site_settings for select
+  using (public.is_admin());
 
 create policy "Admins manage settings"
   on public.site_settings for all

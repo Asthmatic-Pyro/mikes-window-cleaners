@@ -700,7 +700,32 @@ export async function getEventLogs(): Promise<EventLog[]> {
   return (data as EventLog[]) ?? [];
 }
 
+const PUBLIC_SETTINGS_COLUMNS =
+  "id, streamelements_url, buy_me_a_coffee_url, cash_app_url, cash_app_tag, venmo_url, venmo_tag, amazon_wishlist_url, mailbox_address, mailbox_notes, giveaway_ends_at, giveaway_winner_name, giveaway_drawn_at, updated_at";
+
+/** Public settings — never includes giveaway_winner_email or other private fields. */
 export async function getSettings(): Promise<SiteSettings | null> {
+  const { data, error } = await supabase
+    .from("site_settings_public")
+    .select(PUBLIC_SETTINGS_COLUMNS)
+    .eq("id", 1)
+    .maybeSingle();
+  if (!error && data) {
+    return { ...(data as SiteSettings), giveaway_winner_email: "" };
+  }
+  // Fallback before the public view migration is applied
+  const fallback = await supabase
+    .from("site_settings")
+    .select(PUBLIC_SETTINGS_COLUMNS)
+    .eq("id", 1)
+    .maybeSingle();
+  if (fallback.error) throw fallback.error;
+  if (!fallback.data) return null;
+  return { ...(fallback.data as SiteSettings), giveaway_winner_email: "" };
+}
+
+/** Admin-only full settings row (may include giveaway_winner_email). */
+export async function getSettingsAdmin(): Promise<SiteSettings | null> {
   const { data, error } = await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle();
   if (error) throw error;
   return data;

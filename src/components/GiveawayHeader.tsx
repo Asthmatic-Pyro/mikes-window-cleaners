@@ -36,7 +36,7 @@ export default function GiveawayHeader() {
   }, []);
 
   const ends = useMemo(() => formatEndDate(settings?.giveaway_ends_at), [settings?.giveaway_ends_at]);
-  const drawn = Boolean(settings?.giveaway_winner_email);
+  const drawn = Boolean(settings?.giveaway_drawn_at || settings?.giveaway_winner_name);
 
   return (
     <section id="top" className="relative overflow-hidden border-b border-primary/15">
