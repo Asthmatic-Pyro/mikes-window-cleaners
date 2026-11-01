@@ -134,6 +134,99 @@ type NameAlertBody = {
   place?: string;
 };
 
+type GiveawayAction = {
+  kind: "confirm_email" | "approve_claim";
+  name: string;
+  email: string;
+  detail: string;
+  created_at: string | null;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function collectGiveawayMetrics(admin: any) {
+  const [{ data: subs }, { data: pendingClaims }, { count: approvedClaimCount }] = await Promise.all([
+    admin
+      .from("trip_subscribers")
+      .select("email, display_name, status, created_at, confirmed_at")
+      .order("created_at", { ascending: false })
+      .limit(500),
+    admin
+      .from("name_claims")
+      .select("id, display_name, status, created_at, profiles(email, display_name)")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(100),
+    admin
+      .from("name_claims")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "approved"),
+  ]);
+
+  const rows = (subs ?? []) as Array<{
+    email?: string;
+    display_name?: string;
+    status?: string;
+    created_at?: string;
+    confirmed_at?: string | null;
+  }>;
+
+  let pendingConfirm = 0;
+  let confirmed = 0;
+  let unsubscribed = 0;
+  const needsAction: GiveawayAction[] = [];
+
+  for (const row of rows) {
+    const status = row.status || "";
+    if (status === "pending") {
+      pendingConfirm += 1;
+      needsAction.push({
+        kind: "confirm_email",
+        name: (row.display_name || "").trim() || "—",
+        email: (row.email || "").trim().toLowerCase(),
+        detail: "Opened signup — still needs the email confirm link",
+        created_at: row.created_at ?? null,
+      });
+    } else if (status === "confirmed") {
+      confirmed += 1;
+    } else if (status === "unsubscribed") {
+      unsubscribed += 1;
+    }
+  }
+
+  for (const row of (pendingClaims ?? []) as Array<{
+    display_name?: string;
+    created_at?: string;
+    profiles?: { email?: string; display_name?: string } | Array<{ email?: string; display_name?: string }>;
+  }>) {
+    const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+    needsAction.push({
+      kind: "approve_claim",
+      name: (row.display_name || "").trim() || (profile?.display_name || "").trim() || "—",
+      email: (profile?.email || "").trim().toLowerCase(),
+      detail: "Name-on-car tip waiting for approval (counts as an entry once approved)",
+      created_at: row.created_at ?? null,
+    });
+  }
+
+  needsAction.sort((a, b) => {
+    const ta = a.created_at ? Date.parse(a.created_at) : 0;
+    const tb = b.created_at ? Date.parse(b.created_at) : 0;
+    return tb - ta;
+  });
+
+  return {
+    metrics: {
+      attempted: pendingConfirm + confirmed + unsubscribed,
+      pending_confirm: pendingConfirm,
+      confirmed_trip: confirmed,
+      unsubscribed,
+      approved_claims: approvedClaimCount ?? 0,
+      needs_action: needsAction.length,
+    },
+    needs_action: needsAction.slice(0, 80),
+  };
+}
+
 /** Giveaway entries + status (admin). */
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -143,7 +236,10 @@ export async function GET(request: Request) {
   const auth = await requireAdminClient(request);
   if ("error" in auth && auth.error) return auth.error;
   const admin = auth.admin!;
-  const entries = await collectGiveawayEntries(admin);
+  const [entries, bundle] = await Promise.all([
+    collectGiveawayEntries(admin),
+    collectGiveawayMetrics(admin),
+  ]);
   const { data: settings } = await admin
     .from("site_settings")
     .select("giveaway_ends_at, giveaway_winner_email, giveaway_winner_name, giveaway_drawn_at")
@@ -153,6 +249,8 @@ export async function GET(request: Request) {
     entries: entries.map((e) => ({ email: e.email, name: e.name })),
     count: entries.length,
     settings,
+    metrics: bundle.metrics,
+    needs_action: bundle.needs_action,
   });
 }
 

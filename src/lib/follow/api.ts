@@ -809,6 +809,23 @@ export async function notifyFollowers(eventType: "post" | "location", eventKey: 
 
 export type GiveawayEntry = { email: string; name: string };
 
+export type GiveawayAction = {
+  kind: "confirm_email" | "approve_claim";
+  name: string;
+  email: string;
+  detail: string;
+  created_at: string | null;
+};
+
+export type GiveawayMetrics = {
+  attempted: number;
+  pending_confirm: number;
+  confirmed_trip: number;
+  unsubscribed: number;
+  approved_claims: number;
+  needs_action: number;
+};
+
 export type GiveawayStatus = {
   entries: GiveawayEntry[];
   count: number;
@@ -816,6 +833,8 @@ export type GiveawayStatus = {
     SiteSettings,
     "giveaway_ends_at" | "giveaway_winner_email" | "giveaway_winner_name" | "giveaway_drawn_at"
   > | null;
+  metrics?: GiveawayMetrics;
+  needs_action?: GiveawayAction[];
 };
 
 async function adminBearer() {

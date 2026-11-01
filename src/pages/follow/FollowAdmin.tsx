@@ -41,7 +41,9 @@ import {
   getAllFoodTipsAdmin,
   hideFoodTip,
   deleteFoodTip,
+  type GiveawayAction,
   type GiveawayEntry,
+  type GiveawayMetrics,
 } from "@/lib/follow/api";
 import type {
   Destination,
@@ -127,7 +129,11 @@ export default function FollowAdmin() {
   const [savingClaim, setSavingClaim] = useState(false);
   const [claimPhotoBusy, setClaimPhotoBusy] = useState<string | null>(null);
   const [giveawayEntries, setGiveawayEntries] = useState<GiveawayEntry[]>([]);
+  const [giveawayMetrics, setGiveawayMetrics] = useState<GiveawayMetrics | null>(null);
+  const [giveawayActions, setGiveawayActions] = useState<GiveawayAction[]>([]);
   const [giveawayBusy, setGiveawayBusy] = useState(false);
+  const [giveawayRefreshing, setGiveawayRefreshing] = useState(false);
+  const [giveawayRefreshedAt, setGiveawayRefreshedAt] = useState<Date | null>(null);
   const [foodTips, setFoodTips] = useState<FoodTip[]>([]);
 
   const load = useCallback(async () => {
@@ -162,6 +168,9 @@ export default function FollowAdmin() {
     try {
       const giveaway = await getGiveawayStatus();
       setGiveawayEntries(giveaway.entries ?? []);
+      setGiveawayMetrics(giveaway.metrics ?? null);
+      setGiveawayActions(giveaway.needs_action ?? []);
+      setGiveawayRefreshedAt(new Date());
       if (giveaway.settings) {
         setSettings((prev) =>
           prev
@@ -177,6 +186,37 @@ export default function FollowAdmin() {
       }
     } catch {
       setGiveawayEntries([]);
+      setGiveawayMetrics(null);
+      setGiveawayActions([]);
+    }
+  }, []);
+
+  const refreshGiveaway = useCallback(async () => {
+    setGiveawayRefreshing(true);
+    setError(null);
+    try {
+      const giveaway = await getGiveawayStatus();
+      setGiveawayEntries(giveaway.entries ?? []);
+      setGiveawayMetrics(giveaway.metrics ?? null);
+      setGiveawayActions(giveaway.needs_action ?? []);
+      setGiveawayRefreshedAt(new Date());
+      if (giveaway.settings) {
+        setSettings((prev) =>
+          prev
+            ? {
+                ...prev,
+                giveaway_ends_at: giveaway.settings?.giveaway_ends_at ?? prev.giveaway_ends_at ?? "2026-12-31",
+                giveaway_winner_email: giveaway.settings?.giveaway_winner_email ?? prev.giveaway_winner_email ?? "",
+                giveaway_winner_name: giveaway.settings?.giveaway_winner_name ?? prev.giveaway_winner_name ?? "",
+                giveaway_drawn_at: giveaway.settings?.giveaway_drawn_at ?? prev.giveaway_drawn_at ?? null,
+              }
+            : prev,
+        );
+      }
+    } catch (err) {
+      setError(describeFollowError(err, "Could not refresh giveaway"));
+    } finally {
+      setGiveawayRefreshing(false);
     }
   }, []);
 
@@ -184,6 +224,14 @@ export default function FollowAdmin() {
     if (!isAdmin) return;
     void load().catch((err) => setError(describeFollowError(err, "Failed to load admin data")));
   }, [isAdmin, load]);
+
+  useEffect(() => {
+    if (!isAdmin || tab !== "giveaway") return;
+    const id = window.setInterval(() => {
+      void refreshGiveaway();
+    }, 45_000);
+    return () => window.clearInterval(id);
+  }, [isAdmin, tab, refreshGiveaway]);
 
   if (loading) {
     return (
@@ -1112,42 +1160,125 @@ export default function FollowAdmin() {
         )}
 
         {tab === "giveaway" && (
-          <section className="space-y-4 rounded-md border border-white/60 bg-white/55 p-4">
-            <div>
-              <h2 className="font-display text-xl font-bold">Name on the Metro giveaway</h2>
-              <p className="text-sm text-muted-foreground">
-                Entries are confirmed trip emails plus approved name-on-car tips. One entry per email. Drawing closes{" "}
-                {settings?.giveaway_ends_at || "2026-12-31"}.
-              </p>
-            </div>
-            {settings?.giveaway_drawn_at || settings?.giveaway_winner_email ? (
-              <p className="rounded-md border border-primary/25 bg-primary/5 px-3 py-2 text-sm text-primary">
-                Winner: {settings.giveaway_winner_name || "drawn"}
-                {settings.giveaway_drawn_at
-                  ? ` · drawn ${new Date(settings.giveaway_drawn_at).toLocaleString()}`
-                  : ""}
-              </p>
-            ) : (
+          <section className="space-y-4">
+            <div className="sticky top-[3.25rem] z-30 flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/20 bg-white/90 px-3 py-2 shadow-sm backdrop-blur-md">
+              <div className="min-w-0 text-sm">
+                <span className="font-semibold text-foreground">Giveaway live</span>
+                <span className="text-muted-foreground">
+                  {" "}
+                  · {giveawayEntries.length} eligible
+                  {giveawayMetrics ? ` · ${giveawayMetrics.needs_action} need action` : ""}
+                  {giveawayRefreshedAt
+                    ? ` · updated ${giveawayRefreshedAt.toLocaleTimeString()}`
+                    : ""}
+                </span>
+              </div>
               <button
                 type="button"
-                className="btn-primary text-sm"
-                disabled={giveawayBusy || giveawayEntries.length === 0}
-                onClick={() => void onDrawGiveaway()}
+                className="btn-secondary py-1.5 text-xs"
+                disabled={giveawayRefreshing}
+                onClick={() => void refreshGiveaway()}
               >
-                {giveawayBusy ? "Drawing…" : `Draw winner (${giveawayEntries.length} entries)`}
+                {giveawayRefreshing ? "Refreshing…" : "Refresh"}
               </button>
-            )}
-            <ul className="max-h-80 space-y-1 overflow-y-auto text-sm">
-              {giveawayEntries.length === 0 && (
-                <li className="text-muted-foreground">No confirmed entries yet.</li>
+            </div>
+
+            <div className="space-y-4 rounded-md border border-white/60 bg-white/55 p-4">
+              <div>
+                <h2 className="font-display text-xl font-bold">Name on the Metro giveaway</h2>
+                <p className="text-sm text-muted-foreground">
+                  Entries are confirmed trip emails plus approved name-on-car tips. One entry per email. Drawing closes{" "}
+                  {settings?.giveaway_ends_at || "2026-12-31"}.
+                </p>
+              </div>
+
+              {giveawayMetrics && (
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {[
+                    { label: "Attempted signups", value: giveawayMetrics.attempted, hint: "All trip list attempts" },
+                    {
+                      label: "Need confirm",
+                      value: giveawayMetrics.pending_confirm,
+                      hint: "Signed up — email link not opened",
+                    },
+                    { label: "Confirmed trip", value: giveawayMetrics.confirmed_trip, hint: "Counted as entries" },
+                    { label: "Eligible to draw", value: giveawayEntries.length, hint: "Unique emails in the hat" },
+                    { label: "Approved car names", value: giveawayMetrics.approved_claims, hint: "Also count once" },
+                    { label: "Needs your action", value: giveawayMetrics.needs_action, hint: "Confirm or approve" },
+                  ].map((card) => (
+                    <div
+                      key={card.label}
+                      className="rounded-md border border-white/70 bg-white/70 px-3 py-2.5"
+                    >
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{card.label}</p>
+                      <p className="mt-1 font-display text-2xl font-bold tabular-nums">{card.value}</p>
+                      <p className="text-xs text-muted-foreground">{card.hint}</p>
+                    </div>
+                  ))}
+                </div>
               )}
-              {giveawayEntries.map((entry) => (
-                <li key={entry.email}>
-                  <span className="font-medium">{entry.name || "—"}</span>
-                  <span className="text-muted-foreground"> · {entry.email}</span>
-                </li>
-              ))}
-            </ul>
+
+              {giveawayActions.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold">Needs action</h3>
+                  <ul className="max-h-56 space-y-2 overflow-y-auto">
+                    {giveawayActions.map((row) => (
+                      <li
+                        key={`${row.kind}-${row.email}-${row.created_at}`}
+                        className="rounded-md border border-amber-500/25 bg-amber-50/80 px-3 py-2 text-sm"
+                      >
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <span className="font-semibold">
+                            {row.name}
+                            {row.email ? (
+                              <span className="font-normal text-muted-foreground"> · {row.email}</span>
+                            ) : null}
+                          </span>
+                          <span className="text-xs font-medium uppercase tracking-wide text-amber-800/80">
+                            {row.kind === "confirm_email" ? "Confirm email" : "Approve claim"}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{row.detail}</p>
+                        {row.created_at && (
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {new Date(row.created_at).toLocaleString()}
+                          </p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {settings?.giveaway_drawn_at || settings?.giveaway_winner_email ? (
+                <p className="rounded-md border border-primary/25 bg-primary/5 px-3 py-2 text-sm text-primary">
+                  Winner: {settings.giveaway_winner_name || "drawn"}
+                  {settings.giveaway_drawn_at
+                    ? ` · drawn ${new Date(settings.giveaway_drawn_at).toLocaleString()}`
+                    : ""}
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-primary text-sm"
+                  disabled={giveawayBusy || giveawayEntries.length === 0}
+                  onClick={() => void onDrawGiveaway()}
+                >
+                  {giveawayBusy ? "Drawing…" : `Draw winner (${giveawayEntries.length} entries)`}
+                </button>
+              )}
+              <ul className="max-h-80 space-y-1 overflow-y-auto text-sm">
+                {giveawayEntries.length === 0 && (
+                  <li className="text-muted-foreground">No confirmed entries yet.</li>
+                )}
+                {giveawayEntries.map((entry) => (
+                  <li key={entry.email}>
+                    <span className="font-medium">{entry.name || "—"}</span>
+                    <span className="text-muted-foreground"> · {entry.email}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </section>
         )}
       </main>
