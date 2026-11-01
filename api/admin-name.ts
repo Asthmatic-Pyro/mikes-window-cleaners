@@ -233,21 +233,19 @@ export async function POST(request: Request) {
 
   const paymentNote = imageUrl ? noteWithImage("Added in admin", imageUrl) : "Added in admin";
   const tier = payload.tier ?? (payload.amount >= 100 ? "windshield" : "car");
-  const row = {
+  const row: Record<string, unknown> = {
     user_id: user.id,
     display_name: displayName,
     amount: payload.amount,
     tier,
     payment_note: paymentNote,
-    status: "approved" as const,
+    status: "approved",
     reviewed_at: new Date().toISOString(),
   };
-  let created = await admin
-    .from("name_claims")
-    .insert(imageUrl ? { ...row, image_url: imageUrl } : row)
-    .select()
-    .single();
+  if (imageUrl) row.image_url = imageUrl;
+  let created = await admin.from("name_claims").insert(row).select().single();
   if (created.error && imageUrl && /image_url/i.test(created.error.message)) {
+    delete row.image_url;
     created = await admin.from("name_claims").insert(row).select().single();
   }
 

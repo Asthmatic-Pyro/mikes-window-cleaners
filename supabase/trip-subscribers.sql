@@ -36,7 +36,18 @@ alter table public.site_settings
 -- Service role writes only; no public insert/update/select for subscribers
 alter table public.trip_subscribers enable row level security;
 
-drop policy if exists "Admins read trip subscribers" on public.trip_subscribers;
-create policy "Admins read trip subscribers"
-  on public.trip_subscribers for select
-  using (public.is_admin());
+-- Create the policy only if missing (avoids DROP POLICY warnings in the SQL editor)
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'trip_subscribers'
+      and policyname = 'Admins read trip subscribers'
+  ) then
+    create policy "Admins read trip subscribers"
+      on public.trip_subscribers for select
+      using (public.is_admin());
+  end if;
+end $$;

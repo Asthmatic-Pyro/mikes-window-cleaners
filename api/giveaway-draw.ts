@@ -153,7 +153,8 @@ async function requireAdmin(request: Request) {
   return { adminClient, user };
 }
 
-async function collectEntries(adminClient: ReturnType<typeof createClient>): Promise<Entry[]> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function collectEntries(adminClient: any): Promise<Entry[]> {
   const byEmail = new Map<string, Entry>();
 
   const { data: subs } = await adminClient
@@ -161,7 +162,7 @@ async function collectEntries(adminClient: ReturnType<typeof createClient>): Pro
     .select("email, display_name")
     .eq("status", "confirmed");
 
-  for (const row of subs ?? []) {
+  for (const row of (subs ?? []) as Array<{ email?: string; display_name?: string }>) {
     const email = (row.email || "").trim().toLowerCase();
     if (!email.includes("@")) continue;
     byEmail.set(email, { email, name: (row.display_name || "").trim() });
@@ -172,13 +173,14 @@ async function collectEntries(adminClient: ReturnType<typeof createClient>): Pro
     .select("display_name, user_id, profiles(email, display_name)")
     .eq("status", "approved");
 
-  for (const row of claims ?? []) {
+  for (const row of (claims ?? []) as Array<{
+    display_name?: string;
+    profiles?: { email?: string; display_name?: string } | Array<{ email?: string; display_name?: string }>;
+  }>) {
     const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
-    const email = ((profile as { email?: string } | null)?.email || "").trim().toLowerCase();
+    const email = (profile?.email || "").trim().toLowerCase();
     if (!email.includes("@")) continue;
-    const name =
-      (row.display_name || "").trim() ||
-      ((profile as { display_name?: string } | null)?.display_name || "").trim();
+    const name = (row.display_name || "").trim() || (profile?.display_name || "").trim();
     if (!byEmail.has(email)) {
       byEmail.set(email, { email, name });
     } else if (name && !byEmail.get(email)?.name) {
