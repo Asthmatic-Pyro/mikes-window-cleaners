@@ -1187,7 +1187,8 @@ export default function FollowAdmin() {
               <div>
                 <h2 className="font-display text-xl font-bold">Name on the Metro giveaway</h2>
                 <p className="text-sm text-muted-foreground">
-                  Entries are confirmed trip emails plus approved name-on-car tips. One entry per email. Drawing closes{" "}
+                  Prize: name on the hatch window plus a shirt with the windshield name art. Entries are confirmed trip
+                  emails plus approved name-on-car tips. One entry per email. Drawing closes{" "}
                   {settings?.giveaway_ends_at || "2026-12-31"}.
                 </p>
               </div>

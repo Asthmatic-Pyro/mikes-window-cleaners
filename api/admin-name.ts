@@ -324,12 +324,12 @@ async function postDrawGiveaway(request: Request) {
   const { error: sendError } = await resend.emails.send({
     from,
     to: [winner.email],
-    subject: "You won — your name on Mike's Geo Metro",
+    subject: "You won — name on the Metro + shirt",
     html: `
       <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.55;color:#1a1224;max-width:560px">
         <h2 style="color:#5b2d8e">You won the name-on-the-Metro giveaway</h2>
         <p>Hi ${escapeHtml(winner.name || "there")},</p>
-        <p>Your name is going on Mike&apos;s Geo Metro hatch window. Reply to this email or open Follow and claim the exact spelling you want.</p>
+        <p>Your name is going on Mike&apos;s Geo Metro hatch window, and you also get a shirt with that name on the windshield graphic. Reply to this email or open Follow and claim the exact spelling you want.</p>
         <p><a href="${escapeHtml(siteUrl)}/Follow" style="display:inline-block;padding:12px 18px;background:#5b2d8e;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">Open Follow</a></p>
       </div>
     `,
@@ -337,7 +337,7 @@ async function postDrawGiveaway(request: Request) {
 
   void alertMike(
     "trip",
-    `Giveaway winner drawn: ${winner.name || winner.email}\n${winner.email}`,
+    `Giveaway winner drawn: ${winner.name || winner.email}\n${winner.email}\nPrize: hatch name + windshield shirt`,
     { email: winner.email, name: winner.name, status: "drawn" },
   );
 

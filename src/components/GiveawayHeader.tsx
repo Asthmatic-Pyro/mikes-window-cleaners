@@ -48,13 +48,18 @@ export default function GiveawayHeader() {
             Name on the Metro giveaway
           </p>
           <h1 className="mt-3 max-w-2xl font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            Win your real name on Mike&apos;s Geo Metro
+            Win your name on the Metro — and a shirt
           </h1>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            One name goes on the hatch window. Enter by confirming trip updates below, or tip any amount for a
-            name-on-car claim on Follow. Drawing closes {ends}. One entry per email.
+            One winner gets their real name on the hatch window plus a shirt with that name on the windshield graphic.
+            Enter by confirming trip updates below, or tip any amount for a name-on-car claim on Follow. Drawing closes{" "}
+            {ends}. One entry per email.
           </p>
           <ul className="mt-5 space-y-2 text-sm text-foreground/85">
+            <li className="flex gap-2">
+              <Gift className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              Prize: name on the hatch + shirt with the windshield name art.
+            </li>
             <li className="flex gap-2">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               Confirm your email for where-I-am and when-I-move place emails.
