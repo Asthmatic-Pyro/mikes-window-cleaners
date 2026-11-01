@@ -12,7 +12,12 @@ import {
 } from "./_lib/nameAlert.js";
 import { alertMike } from "./_lib/telegram.js";
 
-type GiveawayEntry = { email: string; name: string };
+type GiveawayEntry = {
+  email: string;
+  name: string;
+  sources: Array<"trip" | "claim">;
+  subscriber_id?: string | null;
+};
 
 function escapeHtml(value: string) {
   return value
@@ -28,12 +33,17 @@ async function collectGiveawayEntries(admin: any): Promise<GiveawayEntry[]> {
   const byEmail = new Map<string, GiveawayEntry>();
   const { data: subs } = await admin
     .from("trip_subscribers")
-    .select("email, display_name")
+    .select("id, email, display_name")
     .eq("status", "confirmed");
-  for (const row of (subs ?? []) as Array<{ email?: string; display_name?: string }>) {
+  for (const row of (subs ?? []) as Array<{ id?: string; email?: string; display_name?: string }>) {
     const email = (row.email || "").trim().toLowerCase();
     if (!email.includes("@")) continue;
-    byEmail.set(email, { email, name: (row.display_name || "").trim() });
+    byEmail.set(email, {
+      email,
+      name: (row.display_name || "").trim(),
+      sources: ["trip"],
+      subscriber_id: row.id ?? null,
+    });
   }
   const { data: claims } = await admin
     .from("name_claims")
@@ -47,8 +57,13 @@ async function collectGiveawayEntries(admin: any): Promise<GiveawayEntry[]> {
     const email = (profile?.email || "").trim().toLowerCase();
     if (!email.includes("@")) continue;
     const name = (row.display_name || "").trim() || (profile?.display_name || "").trim();
-    if (!byEmail.has(email)) byEmail.set(email, { email, name });
-    else if (name && !byEmail.get(email)?.name) byEmail.set(email, { email, name });
+    const existing = byEmail.get(email);
+    if (!existing) {
+      byEmail.set(email, { email, name, sources: ["claim"], subscriber_id: null });
+    } else {
+      if (name && !existing.name) existing.name = name;
+      if (!existing.sources.includes("claim")) existing.sources.push("claim");
+    }
   }
   return [...byEmail.values()];
 }
@@ -129,6 +144,8 @@ type NameAlertBody = {
   action?: string;
   claimId?: string;
   displayName?: string;
+  email?: string;
+  name?: string;
   amount?: number | string;
   payMethod?: string;
   place?: string;
@@ -140,6 +157,7 @@ type GiveawayAction = {
   email: string;
   detail: string;
   created_at: string | null;
+  claim_id?: string | null;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -194,6 +212,7 @@ async function collectGiveawayMetrics(admin: any) {
   }
 
   for (const row of (pendingClaims ?? []) as Array<{
+    id?: string;
     display_name?: string;
     created_at?: string;
     profiles?: { email?: string; display_name?: string } | Array<{ email?: string; display_name?: string }>;
@@ -205,6 +224,7 @@ async function collectGiveawayMetrics(admin: any) {
       email: (profile?.email || "").trim().toLowerCase(),
       detail: "Name-on-car tip waiting for approval (counts as an entry once approved)",
       created_at: row.created_at ?? null,
+      claim_id: row.id ?? null,
     });
   }
 
@@ -246,12 +266,128 @@ export async function GET(request: Request) {
     .eq("id", 1)
     .maybeSingle();
   return Response.json({
-    entries: entries.map((e) => ({ email: e.email, name: e.name })),
+    entries: entries.map((e) => ({
+      email: e.email,
+      name: e.name,
+      sources: e.sources,
+      subscriber_id: e.subscriber_id ?? null,
+    })),
     count: entries.length,
     settings,
     metrics: bundle.metrics,
     needs_action: bundle.needs_action,
   });
+}
+
+async function postGiveawayAdjust(
+  request: Request,
+  body: {
+    action?: string;
+    email?: string;
+    name?: string;
+    claimId?: string;
+  },
+) {
+  const auth = await requireAdminClient(request);
+  if ("error" in auth && auth.error) return auth.error;
+  const admin = auth.admin!;
+  const email = oneLine(body.email ?? "", 120).toLowerCase();
+  const action = body.action || "";
+
+  if (action === "rename_giveaway_entry") {
+    if (!email.includes("@")) return Response.json({ error: "Missing email." }, { status: 400 });
+    const name = oneLine(body.name ?? "", 40);
+    if (!name) return Response.json({ error: "Enter a display name." }, { status: 400 });
+    const { error: subErr } = await admin
+      .from("trip_subscribers")
+      .update({ display_name: name, updated_at: new Date().toISOString() })
+      .ilike("email", email);
+    if (subErr) return Response.json({ error: subErr.message }, { status: 500 });
+    const { data: claims } = await admin
+      .from("name_claims")
+      .select("id, profiles(email)")
+      .eq("status", "approved");
+    const ids = ((claims ?? []) as Array<{
+      id: string;
+      profiles?: { email?: string } | Array<{ email?: string }>;
+    }>)
+      .filter((row) => {
+        const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+        return (profile?.email || "").trim().toLowerCase() === email;
+      })
+      .map((row) => row.id);
+    if (ids.length) {
+      const { error: claimErr } = await admin.from("name_claims").update({ display_name: name }).in("id", ids);
+      if (claimErr) return Response.json({ error: claimErr.message }, { status: 500 });
+    }
+    return Response.json({ ok: true });
+  }
+
+  if (action === "remove_giveaway_entry") {
+    if (!email.includes("@")) return Response.json({ error: "Missing email." }, { status: 400 });
+    const now = new Date().toISOString();
+    const { error: subErr } = await admin
+      .from("trip_subscribers")
+      .update({
+        status: "unsubscribed",
+        unsubscribed_at: now,
+        updated_at: now,
+      })
+      .ilike("email", email)
+      .in("status", ["confirmed", "pending"]);
+    if (subErr) return Response.json({ error: subErr.message }, { status: 500 });
+
+    const { data: claims } = await admin
+      .from("name_claims")
+      .select("id, profiles(email)")
+      .in("status", ["approved", "pending"]);
+    const ids = ((claims ?? []) as Array<{
+      id: string;
+      profiles?: { email?: string } | Array<{ email?: string }>;
+    }>)
+      .filter((row) => {
+        const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+        return (profile?.email || "").trim().toLowerCase() === email;
+      })
+      .map((row) => row.id);
+    if (ids.length) {
+      const { error: claimErr } = await admin
+        .from("name_claims")
+        .update({ status: "rejected", reviewed_at: now })
+        .in("id", ids);
+      if (claimErr) return Response.json({ error: claimErr.message }, { status: 500 });
+    }
+    return Response.json({ ok: true });
+  }
+
+  if (action === "confirm_trip_entry") {
+    if (!email.includes("@")) return Response.json({ error: "Missing email." }, { status: 400 });
+    const now = new Date().toISOString();
+    const { data, error } = await admin
+      .from("trip_subscribers")
+      .update({
+        status: "confirmed",
+        confirmed_at: now,
+        unsubscribed_at: null,
+        updated_at: now,
+      })
+      .ilike("email", email)
+      .eq("status", "pending")
+      .select("id")
+      .maybeSingle();
+    if (error) return Response.json({ error: error.message }, { status: 500 });
+    if (!data) return Response.json({ error: "No pending signup for that email." }, { status: 404 });
+    return Response.json({ ok: true });
+  }
+
+  if (action === "dismiss_pending_signup") {
+    if (!email.includes("@")) return Response.json({ error: "Missing email." }, { status: 400 });
+    const { error } = await admin.from("trip_subscribers").delete().ilike("email", email).eq("status", "pending");
+    if (error) return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ ok: true });
+  }
+
+  return null;
 }
 
 function oneLine(value: string, max: number) {
@@ -361,6 +497,16 @@ async function postNameAlert(request: Request) {
 
   if (body.action === "draw_giveaway") {
     return postDrawGiveaway(request);
+  }
+
+  if (
+    body.action === "rename_giveaway_entry" ||
+    body.action === "remove_giveaway_entry" ||
+    body.action === "confirm_trip_entry" ||
+    body.action === "dismiss_pending_signup"
+  ) {
+    const adjusted = await postGiveawayAdjust(request, body);
+    if (adjusted) return adjusted;
   }
 
   const claimId = oneLine(body.claimId ?? "", 80);

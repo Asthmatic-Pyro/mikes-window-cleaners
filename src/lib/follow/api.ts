@@ -807,7 +807,12 @@ export async function notifyFollowers(eventType: "post" | "location", eventKey: 
   return res.json();
 }
 
-export type GiveawayEntry = { email: string; name: string };
+export type GiveawayEntry = {
+  email: string;
+  name: string;
+  sources?: Array<"trip" | "claim">;
+  subscriber_id?: string | null;
+};
 
 export type GiveawayAction = {
   kind: "confirm_email" | "approve_claim";
@@ -815,6 +820,7 @@ export type GiveawayAction = {
   email: string;
   detail: string;
   created_at: string | null;
+  claim_id?: string | null;
 };
 
 export type GiveawayMetrics = {
@@ -872,6 +878,37 @@ export async function drawGiveawayWinner() {
   };
   if (!res.ok) throw new Error(body.error || "Could not draw a winner.");
   return body;
+}
+
+async function postGiveawayAction(action: string, payload: Record<string, string>) {
+  const token = await adminBearer();
+  const res = await fetch("/api/admin-name", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ action, ...payload }),
+  });
+  const body = (await res.json().catch(() => ({}))) as { error?: string; ok?: boolean };
+  if (!res.ok) throw new Error(body.error || "Could not update giveaway entry.");
+  return body;
+}
+
+export async function renameGiveawayEntry(email: string, name: string) {
+  return postGiveawayAction("rename_giveaway_entry", { email, name });
+}
+
+export async function removeGiveawayEntry(email: string) {
+  return postGiveawayAction("remove_giveaway_entry", { email });
+}
+
+export async function confirmTripGiveawayEntry(email: string) {
+  return postGiveawayAction("confirm_trip_entry", { email });
+}
+
+export async function dismissPendingGiveawaySignup(email: string) {
+  return postGiveawayAction("dismiss_pending_signup", { email });
 }
 
 export type RouteEmailClient = {

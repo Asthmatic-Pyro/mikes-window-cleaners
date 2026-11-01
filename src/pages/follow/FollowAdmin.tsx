@@ -38,6 +38,10 @@ import {
   upsertDestination,
   getGiveawayStatus,
   drawGiveawayWinner,
+  renameGiveawayEntry,
+  removeGiveawayEntry,
+  confirmTripGiveawayEntry,
+  dismissPendingGiveawaySignup,
   getAllFoodTipsAdmin,
   hideFoodTip,
   deleteFoodTip,
@@ -520,6 +524,118 @@ export default function FollowAdmin() {
       }
     } catch (err) {
       setError(describeFollowError(err, "Could not draw a winner"));
+    } finally {
+      setGiveawayBusy(false);
+    }
+  };
+
+  const onRenameGiveaway = async (entry: GiveawayEntry) => {
+    const next = window.prompt(`Display name for ${entry.email}`, entry.name || "");
+    if (next == null) return;
+    const name = next.trim();
+    if (!name) {
+      setError("Name cannot be empty.");
+      return;
+    }
+    setGiveawayBusy(true);
+    try {
+      await renameGiveawayEntry(entry.email, name);
+      await refreshGiveaway();
+      flash(`Renamed entry to “${name}”.`);
+    } catch (err) {
+      setError(describeFollowError(err, "Could not rename that entry"));
+    } finally {
+      setGiveawayBusy(false);
+    }
+  };
+
+  const onRemoveGiveaway = async (entry: GiveawayEntry) => {
+    const label = entry.name || entry.email;
+    const ok = window.confirm(
+      `Remove “${label}” (${entry.email}) from the giveaway?\n\nThey will be unsubscribed from trip updates and any approved/pending name claim for that email will be rejected. This cannot be undone from here.`,
+    );
+    if (!ok) return;
+    setGiveawayBusy(true);
+    try {
+      await removeGiveawayEntry(entry.email);
+      await refreshGiveaway();
+      flash(`Removed ${label} from the giveaway.`);
+    } catch (err) {
+      setError(describeFollowError(err, "Could not remove that entry"));
+    } finally {
+      setGiveawayBusy(false);
+    }
+  };
+
+  const onConfirmPendingSignup = async (row: GiveawayAction) => {
+    if (!row.email) return;
+    const ok = window.confirm(
+      `Mark ${row.name || row.email} as confirmed without the email link?\n\nThey become an eligible giveaway entry.`,
+    );
+    if (!ok) return;
+    setGiveawayBusy(true);
+    try {
+      await confirmTripGiveawayEntry(row.email);
+      await refreshGiveaway();
+      flash(`Confirmed ${row.email}.`);
+    } catch (err) {
+      setError(describeFollowError(err, "Could not confirm that signup"));
+    } finally {
+      setGiveawayBusy(false);
+    }
+  };
+
+  const onDismissPendingSignup = async (row: GiveawayAction) => {
+    if (!row.email) return;
+    const ok = window.confirm(
+      `Delete the pending signup for ${row.name || row.email} (${row.email})?\n\nThey will need to sign up again.`,
+    );
+    if (!ok) return;
+    setGiveawayBusy(true);
+    try {
+      await dismissPendingGiveawaySignup(row.email);
+      await refreshGiveaway();
+      flash(`Dismissed pending signup for ${row.email}.`);
+    } catch (err) {
+      setError(describeFollowError(err, "Could not dismiss that signup"));
+    } finally {
+      setGiveawayBusy(false);
+    }
+  };
+
+  const onApprovePendingClaim = async (row: GiveawayAction) => {
+    if (!row.claim_id) {
+      setError("That claim is missing an id — use the Car names tab.");
+      return;
+    }
+    const ok = window.confirm(`Approve name claim for ${row.name || row.email}? It will count as a giveaway entry.`);
+    if (!ok) return;
+    setGiveawayBusy(true);
+    try {
+      await reviewNameClaim(row.claim_id, "approved");
+      await refreshGiveaway();
+      flash(`Approved ${row.name || "claim"}.`);
+    } catch (err) {
+      setError(describeFollowError(err, "Could not approve that claim"));
+    } finally {
+      setGiveawayBusy(false);
+    }
+  };
+
+  const onRejectPendingClaim = async (row: GiveawayAction) => {
+    if (!row.claim_id) {
+      setError("That claim is missing an id — use the Car names tab.");
+      return;
+    }
+    const ok = window.confirm(`Reject name claim for ${row.name || row.email}?`);
+    if (!ok) return;
+    setGiveawayBusy(true);
+    try {
+      await reviewNameClaim(row.claim_id, "rejected");
+      await refreshGiveaway();
+      flash(`Rejected ${row.name || "claim"}.`);
+    } catch (err) {
+      setError(describeFollowError(err, "Could not reject that claim"));
     } finally {
       setGiveawayBusy(false);
     }
@@ -1225,7 +1341,7 @@ export default function FollowAdmin() {
                   <ul className="max-h-56 space-y-2 overflow-y-auto">
                     {giveawayActions.map((row) => (
                       <li
-                        key={`${row.kind}-${row.email}-${row.created_at}`}
+                        key={`${row.kind}-${row.email}-${row.claim_id || ""}-${row.created_at}`}
                         className="rounded-md border border-amber-500/25 bg-amber-50/80 px-3 py-2 text-sm"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -1245,6 +1361,47 @@ export default function FollowAdmin() {
                             {new Date(row.created_at).toLocaleString()}
                           </p>
                         )}
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {row.kind === "confirm_email" ? (
+                            <>
+                              <button
+                                type="button"
+                                className="btn-primary py-1 text-xs"
+                                disabled={giveawayBusy}
+                                onClick={() => void onConfirmPendingSignup(row)}
+                              >
+                                Confirm now
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-secondary py-1 text-xs"
+                                disabled={giveawayBusy}
+                                onClick={() => void onDismissPendingSignup(row)}
+                              >
+                                Delete signup
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                className="btn-primary py-1 text-xs"
+                                disabled={giveawayBusy || !row.claim_id}
+                                onClick={() => void onApprovePendingClaim(row)}
+                              >
+                                Approve
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-secondary py-1 text-xs"
+                                disabled={giveawayBusy || !row.claim_id}
+                                onClick={() => void onRejectPendingClaim(row)}
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -1268,17 +1425,50 @@ export default function FollowAdmin() {
                   {giveawayBusy ? "Drawing…" : `Draw winner (${giveawayEntries.length} entries)`}
                 </button>
               )}
-              <ul className="max-h-80 space-y-1 overflow-y-auto text-sm">
-                {giveawayEntries.length === 0 && (
-                  <li className="text-muted-foreground">No confirmed entries yet.</li>
-                )}
-                {giveawayEntries.map((entry) => (
-                  <li key={entry.email}>
-                    <span className="font-medium">{entry.name || "—"}</span>
-                    <span className="text-muted-foreground"> · {entry.email}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold">Eligible names</h3>
+                <ul className="max-h-80 space-y-2 overflow-y-auto text-sm">
+                  {giveawayEntries.length === 0 && (
+                    <li className="text-muted-foreground">No confirmed entries yet.</li>
+                  )}
+                  {giveawayEntries.map((entry) => (
+                    <li
+                      key={entry.email}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-white/70 bg-white/70 px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium">
+                          {entry.name || "—"}
+                          <span className="font-normal text-muted-foreground"> · {entry.email}</span>
+                        </p>
+                        {entry.sources && entry.sources.length > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            via {entry.sources.map((s) => (s === "trip" ? "trip email" : "car name")).join(" + ")}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex shrink-0 flex-wrap gap-2">
+                        <button
+                          type="button"
+                          className="btn-secondary py-1 text-xs"
+                          disabled={giveawayBusy}
+                          onClick={() => void onRenameGiveaway(entry)}
+                        >
+                          Rename
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-secondary py-1 text-xs text-red-700"
+                          disabled={giveawayBusy}
+                          onClick={() => void onRemoveGiveaway(entry)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </section>
         )}
