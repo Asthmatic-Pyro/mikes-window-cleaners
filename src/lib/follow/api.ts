@@ -1,3 +1,4 @@
+import { orderStopsForRoute } from "@/lib/follow/routeOrder";
 import { supabase } from "@/lib/supabase";
 import type {
   Destination,
@@ -66,7 +67,7 @@ export async function publishPublicLocation() {
 export async function getDestinations(): Promise<Destination[]> {
   const { data, error } = await supabase.from("destinations").select("*").order("sort_order", { ascending: true });
   if (error) throw error;
-  return data ?? [];
+  return orderStopsForRoute(data ?? []);
 }
 
 export async function upsertDestination(

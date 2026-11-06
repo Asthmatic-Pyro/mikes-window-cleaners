@@ -63,6 +63,7 @@ import type {
   EventLog,
 } from "@/lib/follow/types";
 import { matchDestination } from "@/lib/follow/matchStop";
+import { orderStopsForRoute } from "@/lib/follow/routeOrder";
 import RouteEmailPanel from "@/components/follow/RouteEmailPanel";
 import ImageCropModal from "@/components/follow/ImageCropModal";
 import StarRating from "@/components/StarRating";
@@ -81,9 +82,8 @@ type Tab =
   | "log";
 
 function aheadStops(list: Destination[]) {
-  return list
+  return orderStopsForRoute(list)
     .filter((d) => d.status === "upcoming" && d.lat != null && d.lng != null)
-    .sort((a, b) => a.sort_order - b.sort_order)
     .slice(0, 2)
     .map((d) => ({ label: d.city_label || d.name, lat: d.lat as number, lng: d.lng as number }));
 }
@@ -364,14 +364,47 @@ export default function FollowAdmin() {
     try {
       const name = destName.trim();
       const geo = await geocodeCity(name);
-      await upsertDestination({
-        name,
-        status: destStatus,
-        sort_order: destinations.length,
-        city_label: geo?.label ?? name,
-        lat: geo?.lat ?? null,
-        lng: geo?.lng ?? null,
-      });
+      if (!geo) {
+        await upsertDestination({
+          name,
+          status: destStatus,
+          sort_order: destinations.length,
+          city_label: name,
+          lat: null,
+          lng: null,
+        });
+      } else {
+        const draft: Destination = {
+          id: "new-stop",
+          name,
+          status: destStatus,
+          sort_order: Number.MAX_SAFE_INTEGER,
+          city_label: geo.label,
+          lat: geo.lat,
+          lng: geo.lng,
+          created_at: new Date().toISOString(),
+        };
+        const ordered = orderStopsForRoute([...destinations, draft]).map((stop, index) => ({
+          ...stop,
+          sort_order: index,
+        }));
+        const previous = new Map(destinations.map((stop) => [stop.id, stop.sort_order]));
+        await Promise.all(
+          ordered.map((stop) => {
+            const isNew = stop.id === draft.id;
+            if (!isNew && previous.get(stop.id) === stop.sort_order) return Promise.resolve(null);
+            return upsertDestination({
+              id: isNew ? undefined : stop.id,
+              name: stop.name,
+              status: stop.status,
+              sort_order: stop.sort_order,
+              city_label: stop.city_label,
+              lat: stop.lat,
+              lng: stop.lng,
+            });
+          }),
+        );
+      }
       setDestName("");
       await load();
       flash(geo ? "Stop added to the map." : "Stop saved (couldn’t pin on map — try a clearer city name).");

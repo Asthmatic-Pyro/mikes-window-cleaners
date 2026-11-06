@@ -5,6 +5,7 @@ import { Radar } from "lucide-react";
 import WeatherBadge from "@/components/follow/WeatherBadge";
 import { AUDIO_COLORS, CATEGORY_SCALE, CODE_BY_STATE_NAME, MAP_CATEGORIES, colorForLaw, lawBubble, stateHover, type MapCategory } from "@/lib/follow/mapLaws";
 import { usStates } from "@/lib/follow/stateShapes";
+import { orderStopsForRoute } from "@/lib/follow/routeOrder";
 import type { Destination } from "@/lib/follow/types";
 import type { LiveWeather } from "@/lib/follow/weather";
 
@@ -289,9 +290,7 @@ export default function JourneyMap({
     const points: L.LatLngExpression[] = [];
     const routePoints: L.LatLngExpression[] = [];
 
-    const plotted = destinations
-      .filter((d) => d.lat != null && d.lng != null)
-      .sort((a, b) => a.sort_order - b.sort_order);
+    const plotted = orderStopsForRoute(destinations).filter((d) => d.lat != null && d.lng != null);
 
     for (const d of plotted) {
       const latlng: L.LatLngExpression = [d.lat!, d.lng!];
