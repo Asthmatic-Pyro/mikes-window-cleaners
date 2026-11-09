@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import Header from "@/components/Header";
+import InterestedBand from "@/components/InterestedBand";
 import GiveawayHeader from "@/components/GiveawayHeader";
 import HeroSection from "@/components/HeroSection";
 import WhySection from "@/components/WhySection";
@@ -25,7 +26,12 @@ export default function Index() {
     <div className="relative min-h-screen">
       <Header onOpen={openPopup} onGetQuote={openQuote} />
       <main>
-        <GiveawayHeader />
+        <section id="top" className="border-b border-primary/10 px-4 pb-8 pt-28 md:pt-32">
+          <div className="mx-auto grid max-w-6xl items-stretch gap-4 md:grid-cols-2">
+            <InterestedBand embedded />
+            <GiveawayHeader embedded />
+          </div>
+        </section>
         <FollowShoutSection />
         <HeroSection onGetQuote={openQuote} onSeeServices={() => openPopup("services")} />
         <WhySection onLearnMore={() => openPopup("why")} onGetQuote={openQuote} />

@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { env } from "./_lib/env.js";
+import { handleInterested } from "./_lib/interested.js";
 import { alertMike } from "./_lib/telegram.js";
 
 const resend = new Resend(env("RESEND_API_KEY"));
@@ -23,6 +24,10 @@ function escapeHtml(value: string) {
 }
 
 export async function POST(request: Request) {
+  if (new URL(request.url).searchParams.get("form") === "interested") {
+    return handleInterested(request);
+  }
+
   if (!env("RESEND_API_KEY")) {
     return Response.json({ error: "Email is not configured." }, { status: 500 });
   }

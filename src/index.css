@@ -93,6 +93,21 @@
     background-image: var(--gradient-wash);
   }
 
+  .not-found-wipe {
+    left: -30%;
+    animation: not-found-wipe 2.8s ease-in-out infinite;
+  }
+
+  @keyframes not-found-wipe {
+    0% { transform: translateX(0); }
+    42% { transform: translateX(120%); }
+    100% { transform: translateX(120%); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .not-found-wipe { animation: none; left: 18%; }
+  }
+
   .follow-shout-base {
     background-color: hsl(286 48% 30%);
     background-image:
@@ -149,6 +164,21 @@
       ),
       radial-gradient(ellipse 46% 22% at 8% 0%, hsl(0 0% 100% / 0.22), transparent 70%),
       radial-gradient(ellipse 80% 70% at 50% 120%, hsl(280 40% 12% / 0.35), transparent 55%);
+  }
+
+  .interested-step {
+    animation: interested-in 0.38s ease;
+  }
+
+  @keyframes interested-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
 
   .btn-primary {

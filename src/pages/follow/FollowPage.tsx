@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import GiveawayHeader from "@/components/GiveawayHeader";
+import InterestedBand from "@/components/InterestedBand";
 import FollowHeader from "@/components/follow/FollowHeader";
 import JourneyMap from "@/components/follow/JourneyMap";
 import DestinationsList from "@/components/follow/DestinationsList";
@@ -132,6 +134,10 @@ export default function FollowPage() {
     <div className="min-h-screen pb-16">
       <FollowHeader />
       <main className="mx-auto max-w-5xl space-y-10 px-4 py-6 md:py-8">
+        <div className="grid items-stretch gap-4 md:grid-cols-2">
+          <GiveawayHeader embedded idPrefix="follow-giveaway" />
+          <InterestedBand embedded />
+        </div>
         {/* Primary: journey */}
         <section className="space-y-4">
           <div className="reveal">

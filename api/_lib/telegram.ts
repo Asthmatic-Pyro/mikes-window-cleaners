@@ -96,6 +96,68 @@ export async function ensureTelegramWebhook() {
   }).catch((err) => console.error("setWebhook failed:", err));
 }
 
+/** Send to Mike's Telegram chat only. Does not write the business event log. */
+export async function sendTelegramOnly(text: string) {
+  const token = env("TELEGRAM_BOT_TOKEN");
+  const chatId = env("TELEGRAM_CHAT_ID");
+  if (!token || !chatId) {
+    console.warn("Telegram is not configured.");
+    return false;
+  }
+
+  let rest = text.trim();
+  if (!rest) return false;
+  while (rest.length > 0) {
+    const chunk = rest.slice(0, 3500);
+    rest = rest.slice(3500);
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: chunk,
+          disable_web_page_preview: true,
+        }),
+      });
+      if (!res.ok) {
+        const errBody = await res.text();
+        console.error("Telegram send failed:", res.status, errBody.slice(0, 300));
+        return false;
+      }
+    } catch (err) {
+      console.error("Telegram send error:", err);
+      return false;
+    }
+  }
+  return true;
+}
+
+export async function sendTelegramPhoto(bytes: Buffer, mime: string, caption: string) {
+  const token = env("TELEGRAM_BOT_TOKEN");
+  const chatId = env("TELEGRAM_CHAT_ID");
+  if (!token || !chatId) return false;
+  const form = new FormData();
+  form.set("chat_id", chatId);
+  form.set("caption", caption.slice(0, 1000));
+  form.set("photo", new Blob([new Uint8Array(bytes)], { type: mime }), "application.jpg");
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+      method: "POST",
+      body: form,
+    });
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.error("Telegram photo failed:", res.status, errBody.slice(0, 300));
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Telegram photo error:", err);
+    return false;
+  }
+}
+
 export async function alertMike(
   eventType: SiteEventType,
   summary: string,

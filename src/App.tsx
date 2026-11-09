@@ -4,10 +4,12 @@ import { WeatherProvider } from "@/contexts/WeatherContext";
 import WeatherEffects from "@/components/follow/WeatherEffects";
 import Index from "@/pages/Index";
 import ReviewsPage from "@/pages/Reviews";
+import InterestedPage from "@/pages/Interested";
 import FollowPage from "@/pages/follow/FollowPage";
 import FollowLogin from "@/pages/follow/FollowLogin";
 import FollowAdmin from "@/pages/follow/FollowAdmin";
 import AuthCallback from "@/pages/follow/AuthCallback";
+import NotFoundPage from "@/pages/NotFound";
 
 export default function App() {
   return (
@@ -18,6 +20,7 @@ export default function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/interested" element={<InterestedPage />} />
               <Route path="/reviews" element={<ReviewsPage />} />
               <Route path="/Reviews" element={<ReviewsPage />} />
               <Route path="/Follow" element={<FollowPage />} />
@@ -28,6 +31,7 @@ export default function App() {
               <Route path="/follow/admin" element={<FollowAdmin />} />
               <Route path="/Follow/auth/callback" element={<AuthCallback />} />
               <Route path="/follow/auth/callback" element={<AuthCallback />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </BrowserRouter>
         </div>

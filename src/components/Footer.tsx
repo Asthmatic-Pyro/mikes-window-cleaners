@@ -28,6 +28,9 @@ export default function Footer({ onOpen, onGetQuote }: FooterProps) {
           (513) 628-4128
         </a>
         <nav className="flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-sm text-white/65">
+          <Link to="/interested" className="font-semibold text-white transition-colors hover:text-white/80">
+            Interested in Mike??
+          </Link>
           {navItems.map((item) => (
             <button
               key={item.id}

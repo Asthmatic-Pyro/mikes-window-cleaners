@@ -106,6 +106,13 @@ export default function Header({ onGetQuote, onOpen }: HeaderProps) {
       {open && (
         <div className="border-t border-white/60 bg-white/95 backdrop-blur-xl md:hidden">
           <nav className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3">
+            <Link
+              to="/interested"
+              className="rounded-md px-3 py-2.5 text-left text-sm font-semibold text-primary transition-colors hover:bg-secondary"
+              onClick={() => setOpen(false)}
+            >
+              Interested in Mike??
+            </Link>
             {navItems.map((item) => (
               <button
                 key={item.id}

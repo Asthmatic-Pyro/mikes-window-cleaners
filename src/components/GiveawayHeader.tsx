@@ -12,7 +12,7 @@ function formatEndDate(raw: string | null | undefined) {
   return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
-export default function GiveawayHeader() {
+export default function GiveawayHeader({ embedded = false, idPrefix = "giveaway-trip" }: { embedded?: boolean; idPrefix?: string }) {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [photos, setPhotos] = useState<NameClaim[]>([]);
 
@@ -38,10 +38,35 @@ export default function GiveawayHeader() {
   const ends = useMemo(() => formatEndDate(settings?.giveaway_ends_at), [settings?.giveaway_ends_at]);
   const drawn = Boolean(settings?.giveaway_drawn_at || settings?.giveaway_winner_name);
 
+  if (embedded) {
+    return (
+      <div className="flex h-full flex-col rounded-2xl border border-primary/15 bg-white/80 p-5 shadow-sm">
+        <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+          <Gift className="h-4 w-4" />
+          Name on the Metro giveaway
+        </p>
+        <h2 className="mt-2 font-display text-2xl font-extrabold tracking-tight text-foreground">
+          Win your name on the Metro — and a shirt
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          One winner. Your real name on the hatch, plus a shirt. Drawing closes {ends}. One entry per email.
+        </p>
+        {drawn && settings?.giveaway_winner_name && (
+          <p className="mt-3 rounded-md border border-primary/25 bg-primary/5 px-3 py-2 text-sm font-medium text-primary">
+            Winner drawn: {settings.giveaway_winner_name}
+          </p>
+        )}
+        <div className="mt-4">
+          <TripUpdatesForm idPrefix={idPrefix} compact />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <section id="top" className="relative overflow-hidden border-b border-primary/15">
+    <section className="relative overflow-hidden border-b border-primary/15">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/18 via-background to-secondary/80" />
-      <div className="relative z-10 mx-auto grid max-w-6xl gap-10 px-4 pb-14 pt-28 md:grid-cols-[1.15fr_0.85fr] md:items-center md:pb-16 md:pt-32">
+      <div className="relative z-10 mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-[1.15fr_0.85fr] md:items-center md:py-16">
         <Reveal>
           <p className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-primary">
             <Gift className="h-4 w-4" />
@@ -99,7 +124,7 @@ export default function GiveawayHeader() {
               Where Mike is, when he moves, and a look at each stop. Confirms your giveaway entry.
             </p>
             <div className="mt-4">
-              <TripUpdatesForm idPrefix="giveaway-trip" compact />
+              <TripUpdatesForm idPrefix={idPrefix} compact />
             </div>
           </div>
         </Reveal>
